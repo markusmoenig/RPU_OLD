@@ -1,135 +1,96 @@
-use crate::rpuc::{buffer::Buffer2d, rasterizer, Pipeline, Target};
-use vek::*;
+use nalgebra::*;
 
-struct Cube<'a> {
-    mvp: Mat4<f32>,
-    positions: &'a [Vec4<f32>],
-}
+pub mod buffer;
+pub mod rasterizer;
+pub mod camera;
 
-impl<'a> Pipeline for Cube<'a> {
-    type Vertex = (usize, Rgba<f32>);
-    type VsOut = Rgba<f32>;
-    type Pixel = u32;
-
-    #[inline(always)]
-    fn vert(&self, (v_index, v_color): &Self::Vertex) -> ([f32; 4], Self::VsOut) {
-        ((self.mvp * self.positions[*v_index]).into_array(), *v_color)
-    }
-
-    #[inline(always)]
-    fn frag(&self, v_color: &Self::VsOut) -> Self::Pixel {
-        let bytes = v_color.map(|e| (e * 255.0) as u8).into_array();
-        (bytes[2] as u32) << 16
-            | (bytes[1] as u32) << 8
-            | (bytes[0] as u32) << 0
-            | (bytes[3] as u32) << 24
-    }
-}
+use crate::prelude::*;
 
 pub struct RPU {
-    color_buffer            : Buffer2d<u32>,
-    depth_buffer            : Buffer2d<f32>,
 
-    i                       : f32,
+    color               : Buffer<u32>,
+    depth               : Buffer<f32>,
+
+    camera              : Box<dyn Camera3D>,
+    rasterizer          : Box<dyn Rasterizer>,
 }
 
 impl RPU {
 
     pub fn new(width: usize, height: usize) -> Self {
 
-        let color_buffer = Buffer2d::new([width, height], 0 as u32);
-        let depth_buffer = Buffer2d::new([width, height], 1.0);
-
         Self {
-            color_buffer,
-            depth_buffer,
-            i               : 0.0,
+
+            color       : Buffer::new(width, height, 0),
+            depth       : Buffer::new(width, height, -1.0),
+
+            camera      : Box::new(Pinhole::new()),
+            rasterizer  : Box::new(RasterFast::new()),
         }
     }
 
     pub fn render(&mut self, frame: &mut [u8], rect: (usize, usize, usize, usize)) {
-        let stride = rect.2 * 4;
-        //self.set(frame, width / 2, height / 2, stride, &[255, 255, 255, 255]);
-        //self.line(frame, 0, 0, 100, 100, stride, &[255, 255, 255, 255]);
-        //self.triangle(frame, Vector3::new(0.0, 0.0, 0.0), Vector3::new( 0.0, 100.0, 0.0), Vector3::new( 100.0, 100.0, 0.0), stride, &[255, 255, 255, 255]);
 
-        let mvp = Mat4::perspective_fov_rh_no(1.3, rect.2 as f32, rect.3 as f32, 0.01, 100.0)
-            * Mat4::translation_3d(Vec3::new(0.0, 0.0, -2.0))
-            * Mat4::<f32>::scaling_3d(0.4)
-            * Mat4::rotation_x((self.i * 0.002).sin() * 8.0)
-            * Mat4::rotation_y((self.i * 0.004).cos() * 4.0)
-            * Mat4::rotation_z((self.i * 0.008).sin() * 2.0);
+        self.rasterizer.render(&mut &self.camera, &mut self.color, &mut self.depth);
 
-        self.color_buffer.clear(0);
-        self.depth_buffer.clear(1.0);
+        let pixels = bytemuck::cast_slice::<u32, u8>(&self.color.pixels[..]);
 
-        Cube {
-            mvp,
-            positions: &[
-                Vec4::new(-1.0, -1.0, -1.0, 1.0), // 0
-                Vec4::new(-1.0, -1.0, 1.0, 1.0),  // 1
-                Vec4::new(-1.0, 1.0, -1.0, 1.0),  // 2
-                Vec4::new(-1.0, 1.0, 1.0, 1.0),   // 3
-                Vec4::new(1.0, -1.0, -1.0, 1.0),  // 4
-                Vec4::new(1.0, -1.0, 1.0, 1.0),   // 5
-                Vec4::new(1.0, 1.0, -1.0, 1.0),   // 6
-                Vec4::new(1.0, 1.0, 1.0, 1.0),    // 7
-            ],
+        self.copy_slice(frame, pixels, &rect, self.color.size[0] as usize * 4);
+
+        /*
+        let width = rect.2;
+        let height = rect.3;
+        for y in 0..height {
+            for x in 0..width {
+                let o = x * 4 + y * width * 4;
+
+                let xx = x as f64 / width as f64;
+                let yy = y as f64 / height as f64;
+                let ratio = width as f64 / height as f64;
+                let coord = Vector2::new((xx - 0.5) * ratio, yy - 0.5);
+
+                let c = self.compute(coord);
+                frame[o..o + 4].copy_from_slice(&c);
+            }
+        }*/
+    }
+
+    pub fn compute(&mut self, p: Vector2<f64>) -> [u8; 4] {
+        let mut c = [0, 0, 0, 255];
+
+        let ro = Vector3::new(0.0, 0.0, 4.0);
+        let ta = Vector3::new(0.0, 0.0, 0.0);
+
+        let rd = self.camera(p, ro, ta);
+
+        let mut t = 0.0001;
+
+        for _d in 0..100 {
+
+            let p = ro + t * rd;
+
+            let d = p.norm() - 1.0;
+
+            if d < 0.001 {
+                c[0] = 255;
+                break;
+            }
+
+            t += d;
         }
-        .draw::<rasterizer::Triangles<_, rasterizer::BackfaceCullingEnabled>, _>(
-            &[
-                // -x
-                (0, Rgba::green()),
-                (3, Rgba::blue()),
-                (2, Rgba::red()),
-                (0, Rgba::green()),
-                (1, Rgba::red()),
-                (3, Rgba::blue()),
-                // +x
-                (7, Rgba::blue()),
-                (4, Rgba::green()),
-                (6, Rgba::red()),
-                (5, Rgba::red()),
-                (4, Rgba::green()),
-                (7, Rgba::blue()),
-                // -y
-                (5, Rgba::blue()),
-                (0, Rgba::red()),
-                (4, Rgba::green()),
-                (1, Rgba::green()),
-                (0, Rgba::red()),
-                (5, Rgba::blue()),
-                // +y
-                (2, Rgba::red()),
-                (7, Rgba::blue()),
-                (6, Rgba::green()),
-                (2, Rgba::red()),
-                (3, Rgba::green()),
-                (7, Rgba::blue()),
-                // -z
-                (0, Rgba::red()),
-                (6, Rgba::green()),
-                (4, Rgba::blue()),
-                (0, Rgba::red()),
-                (2, Rgba::blue()),
-                (6, Rgba::green()),
-                // +z
-                (7, Rgba::green()),
-                (1, Rgba::red()),
-                (5, Rgba::blue()),
-                (3, Rgba::blue()),
-                (1, Rgba::red()),
-                (7, Rgba::green()),
-            ],
-            &mut self.color_buffer,
-            Some(&mut self.depth_buffer),
-        );
 
-        let pixels = bytemuck::cast_slice::<u32, u8>(&self.color_buffer.items[..]);
+        c
+    }
 
-        self.copy_slice(frame, pixels, &rect, stride);
+    pub fn camera(&self, p: Vector2<f64>, ro: Vector3<f64>, ta: Vector3<f64>) -> Vector3<f64> {
 
-        self.i += 1.0;
+        let ww = (ta - ro).normalize();
+        let uu = ww.cross(&Vector3::new(0.0, 1.0, 0.0)).normalize();
+        let vv = uu.cross(&ww).normalize();
+
+        let rd = (p.x * uu + p.y * vv + 2.0 * ww).normalize();
+
+        rd
     }
 
 

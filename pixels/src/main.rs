@@ -17,8 +17,8 @@ fn get_time() -> u128 {
 
 fn main() -> Result<(), Error> {
 
-    let width = 300;
-    let height = 300;
+    let width = 600;
+    let height = 600;
 
     let mut rpu = RPU::new(width, height);
 
@@ -46,7 +46,9 @@ fn main() -> Result<(), Error> {
    event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
+            let start = get_time();
             rpu.render(&mut pixels.get_frame()[..], (0, 0, width, height));
+            println!("Time: {}", get_time() - start);
             if pixels
                 .render()
                 .map_err(|e| error!("pixels.render() failed: {}", e))
