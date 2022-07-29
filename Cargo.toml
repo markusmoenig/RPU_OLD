@@ -1,0 +1,10 @@
+[workspace]
+
+members = [
+    "rpu",
+    "cli",
+]
+
+edition = "2021"
+resolver = "2"
+
