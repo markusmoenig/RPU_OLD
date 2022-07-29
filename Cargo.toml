@@ -3,8 +3,12 @@
 members = [
     "rpu",
     "cli",
+    "pixels"
+]
+
+default-members = [
+    "pixels"
 ]
 
 edition = "2021"
 resolver = "2"
-

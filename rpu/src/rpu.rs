@@ -1,7 +1,5 @@
-use nalgebra::*;
 use crate::rpuc::{buffer::Buffer2d, rasterizer, Pipeline, Target};
 use vek::*;
-
 
 struct Cube<'a> {
     mvp: Mat4<f32>,
@@ -28,11 +26,11 @@ impl<'a> Pipeline for Cube<'a> {
     }
 }
 
-
-type Color = [u8; 4];
 pub struct RPU {
     color_buffer            : Buffer2d<u32>,
     depth_buffer            : Buffer2d<f32>,
+
+    i                       : f32,
 }
 
 impl RPU {
@@ -44,7 +42,8 @@ impl RPU {
 
         Self {
             color_buffer,
-            depth_buffer
+            depth_buffer,
+            i               : 0.0,
         }
     }
 
@@ -56,10 +55,10 @@ impl RPU {
 
         let mvp = Mat4::perspective_fov_rh_no(1.3, rect.2 as f32, rect.3 as f32, 0.01, 100.0)
             * Mat4::translation_3d(Vec3::new(0.0, 0.0, -2.0))
-            * Mat4::<f32>::scaling_3d(0.4);
-            // * Mat4::rotation_x((i as f32 * 0.002).sin() * 8.0)
-            // * Mat4::rotation_y((i as f32 * 0.004).cos() * 4.0)
-            // * Mat4::rotation_z((i as f32 * 0.008).sin() * 2.0);
+            * Mat4::<f32>::scaling_3d(0.4)
+            * Mat4::rotation_x((self.i * 0.002).sin() * 8.0)
+            * Mat4::rotation_y((self.i * 0.004).cos() * 4.0)
+            * Mat4::rotation_z((self.i * 0.008).sin() * 2.0);
 
         self.color_buffer.clear(0);
         self.depth_buffer.clear(1.0);
@@ -130,6 +129,7 @@ impl RPU {
 
         self.copy_slice(frame, pixels, &rect, stride);
 
+        self.i += 1.0;
     }
 
 
@@ -140,88 +140,5 @@ impl RPU {
             let s = y * rect.2 * 4;
             dest[d..d + rect.2 * 4].copy_from_slice(&source[s..s + rect.2 * 4]);
         }
-    }
-
-    pub fn barycentric(&self, a: &Vector3<f32>, b: &Vector3<f32>, c: &Vector3<f32>, p: (f32, f32)) -> Vector3<f32> {
-        let cross = Vector3::new( c.x - a.x, b.x - a.x, a.x - p.0).cross(&Vector3::new(c.y - a.y, b.y - a.y, a.y - p.1));
-
-        Vector3::new(
-            1.0 - (cross.y + cross.x) / cross.z,
-            cross.y / cross.z,
-            cross.x / cross.z,
-        )
-    }
-
-    pub fn triangle(&self, frame: &mut [u8], v1: Vector3<f32>, v2: Vector3<f32>, v3: Vector3<f32>, stride: usize, color: &Color) {
-
-    let x0 = vec![v1.x, v2.y, v3.z]
-        .iter()
-        .fold(&v1.x, |xmin, x| if xmin > x { x } else { xmin })
-        .round() as i32;
-    let y0 = vec![v1.y, v2.y, v3.y]
-        .iter()
-        .fold(&v1.y, |ymin, y| if ymin > y { y } else { ymin })
-        .round() as i32;
-    let x1 = vec![v1.x, v2.x, v3.x]
-        .iter()
-        .fold(&v1.x, |xmax, x| if xmax < x { x } else { xmax })
-        .round() as i32;
-    let y1 = vec![v1.y, v2.y, v3.y]
-        .iter()
-        .fold(&v1.y, |ymax, y| if ymax < y { y } else { ymax })
-        .round() as i32;
-
-    for y in y0..=y1 {
-        for x in x0..=x1 {
-            let bc = self.barycentric(&v1, &v2, &v3, (x as f32, y as f32));
-            //sh.fragment(&bc);
-            if bc.x < 0.0 || bc.y < 0.0 || bc.z < 0.0 {
-                continue;
-            }
-            self.set(frame, x as usize, y as usize, stride, color);
-        }
-    }
-
-    }
-
-    pub fn line(&self, frame: &mut [u8], mut x0: i32, mut y0: i32, mut x1: i32, mut y1: i32, stride: usize, color: &Color) {
-
-        let mut steep = false;
-
-        if (x0 -x1).abs() < (y0 - y1).abs() {
-            std::mem::swap(&mut x0, &mut y0);
-            std::mem::swap(&mut x1, &mut y1);
-            steep = true;
-        }
-
-        if x0 > x1 {
-            std::mem::swap(&mut x0, &mut x1);
-            std::mem::swap(&mut y0, &mut y1);
-        }
-
-        let dx = x1 - x0;
-        let dy = y1 - y0;
-
-        let derror2 = dy.abs() * 2;
-        let mut error2 = 0;
-        let mut y = y0;
-
-        for x in x0..=x1 {
-            if steep {
-                self.set(frame, y as usize, x as usize, stride, color);
-            } else {
-                self.set(frame, x as usize, y as usize, stride, color);
-            }
-            error2 += derror2;
-            if error2 > dx {
-                y += if y1 > y0 { 1 } else {-1};//?1:-1);
-                error2 -= dx*2;
-            }
-        }
-    }
-
-    pub fn set(&self, frame: &mut [u8], x: usize, y: usize, stride: usize, color: &Color) {
-        let i = x * 4 + y * stride;
-        frame[i..i + 4].copy_from_slice(color);
     }
 }
