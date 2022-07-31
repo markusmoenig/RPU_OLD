@@ -1,1 +1,1 @@
-A procedural (retro) 3D software renderer.
+A procedural (retro) 3D software renderer and scene definition language.
