@@ -9,12 +9,19 @@ pub type Color = [u8; 4];
 pub mod prelude {
     pub use nalgebra::*;
     pub use crate::rpu::RPU;
+
     pub use crate::rpu::buffer::Buffer;
     pub use crate::rpu::buffer::ByteBuffer;
-    pub use crate::rpu::rasterizer::Rasterizer;
-    pub use crate::rpu::rasterizer::cpu::RasterCPU;
+
     pub use crate::rpu::camera::Camera3D;
     pub use crate::rpu::camera::pinhole::Pinhole;
+
+    pub use crate::rpu::analytical::Analytical;
+    pub use crate::rpu::analytical::sphere::AnalyticalSphere;
+    pub use crate::rpu::analytical::cube::AnalyticalCube;
+
+    pub use crate::rpu::world::World;
+
     pub use crate::F;
     pub use crate::Color;
 }
