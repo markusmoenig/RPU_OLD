@@ -8,7 +8,7 @@ use crate::prelude::*;
 
 pub struct RPU {
 
-    color               : Buffer<u32>,
+    color               : ByteBuffer,
     depth               : Buffer<f32>,
 
     camera              : Box<dyn Camera3D>,
@@ -21,21 +21,18 @@ impl RPU {
 
         Self {
 
-            color       : Buffer::new(width, height, 0),
+            color       : ByteBuffer::new(width, height, 0),
             depth       : Buffer::new(width, height, -1.0),
 
             camera      : Box::new(Pinhole::new()),
-            rasterizer  : Box::new(RasterFast::new()),
+            rasterizer  : Box::new(RasterCPU::new()),
         }
     }
 
     pub fn render(&mut self, frame: &mut [u8], rect: (usize, usize, usize, usize)) {
 
         self.rasterizer.render(&mut &self.camera, &mut self.color, &mut self.depth);
-
-        let pixels = bytemuck::cast_slice::<u32, u8>(&self.color.pixels[..]);
-
-        self.copy_slice(frame, pixels, &rect, self.color.size[0] as usize * 4);
+        self.copy_slice(frame, &self.color.pixels[..], &rect, self.color.size[0] as usize * 4);
 
         /*
         let width = rect.2;

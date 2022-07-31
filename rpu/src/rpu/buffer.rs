@@ -42,3 +42,19 @@ impl<T: Clone> Buffer<T> {
         }
     }
 }
+
+#[derive(Clone)]
+pub struct ByteBuffer {
+    pub pixels          : Vec<u8>,
+    pub size            : [usize; 2],
+}
+
+impl ByteBuffer {
+    pub fn new (width: usize, height: usize, fill: u8) -> Self {
+
+        Self {
+            pixels      : vec![fill; width * height * 4],
+            size        : [width, height]
+        }
+    }
+}

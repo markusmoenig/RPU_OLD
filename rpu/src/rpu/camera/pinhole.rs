@@ -11,7 +11,7 @@ impl Camera3D for Pinhole {
 
     fn new() -> Self {
 
-        let origin = Vector3::new(0.0, 0.0, 4.0);
+        let origin = Vector3::new(0.0, 2.0, 4.0);
         let center = Vector3::new(0.0, 0.0, 0.0);
 
         Self {
@@ -20,6 +20,7 @@ impl Camera3D for Pinhole {
         }
     }
 
+    #[inline(always)]
     fn gen_ray(&self, p: Vector2<F>) -> [Vector3<F>; 2] {
         let ww = (self.center - self.origin).normalize();
         let uu = ww.cross(&Vector3::new(0.0, 1.0, 0.0)).normalize();
@@ -30,3 +31,6 @@ impl Camera3D for Pinhole {
         [self.origin, rd]
     }
 }
+
+//unsafe impl Send for Pinhole where Pinhole: Send {}
+//unsafe impl Sync for Pinhole where Pinhole: Sync {}

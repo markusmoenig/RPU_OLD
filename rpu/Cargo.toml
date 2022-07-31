@@ -11,3 +11,4 @@ description = "A procedural retro 3D software renderer and future fantasy consol
 #num_cpus = "1.13.1"
 nalgebra = "0.31.0"
 bytemuck = "1.11.0"
+rayon = "1.5.3"

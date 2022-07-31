@@ -18,7 +18,7 @@ fn get_time() -> u128 {
 fn main() -> Result<(), Error> {
 
     let width = 600;
-    let height = 600;
+    let height = 400;
 
     let mut rpu = RPU::new(width, height);
 
