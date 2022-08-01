@@ -99,7 +99,7 @@ impl World {
         let mut c = [0, 0, 0, 255];
 
         for a in &self.analytical_objects {
-            if let Some(dn) = a.get_distance_and_normal(ray) {
+            if let Some(_dn) = a.get_distance_and_normal(ray) {
                 c[0] = 255;
             }
         }

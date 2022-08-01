@@ -22,8 +22,15 @@ pub mod prelude {
 
     pub use crate::rpu::world::World;
 
+    pub use crate::rpu::compiler::Compiler;
+    pub use crate::rpu::compiler::Error;
+    pub use crate::rpu::compiler::scanner::Scanner;
+    pub use crate::rpu::compiler::context::Context;
+
     pub use crate::F;
     pub use crate::Color;
+
+    pub use std::path::PathBuf;
 }
 
 #[macro_use]

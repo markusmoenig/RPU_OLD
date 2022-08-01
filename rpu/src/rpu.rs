@@ -1,9 +1,9 @@
-use nalgebra::*;
 
 pub mod buffer;
 pub mod camera;
 pub mod world;
 pub mod analytical;
+pub mod compiler;
 
 use crate::prelude::*;
 
@@ -26,6 +26,13 @@ impl RPU {
             camera      : Box::new(Pinhole::new()),
             world       : World::new(),
         }
+    }
+
+    pub fn compile_from_path(&mut self, path_to_main: PathBuf) -> Result<(), String> {
+
+        let _compiler = Compiler::compile_from_path(path_to_main);
+
+        Ok(())
     }
 
     pub fn render(&mut self, frame: &mut [u8], rect: (usize, usize, usize, usize)) {

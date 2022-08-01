@@ -20,7 +20,11 @@ fn main() -> Result<(), Error> {
     let width = 600;
     let height = 400;
 
+    let mut path_to_main = std::path::PathBuf::new();
+    path_to_main.push("main.rpu");
+
     let mut rpu = RPU::new(width, height);
+    _ = rpu.compile_from_path(path_to_main);
 
     env_logger::init();
     let event_loop = EventLoop::new();
