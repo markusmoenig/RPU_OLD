@@ -30,6 +30,7 @@ impl RPU {
 
     pub fn render(&mut self, frame: &mut [u8], rect: (usize, usize, usize, usize)) {
 
+        self.world.update();
         self.world.render_distributed(&mut &self.camera, &mut self.color, &mut self.depth);
         // self.world.render(&mut &self.camera, &mut self.color, &mut self.depth);
 

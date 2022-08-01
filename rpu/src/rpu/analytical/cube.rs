@@ -1,26 +1,45 @@
 use crate::prelude::*;
 
 pub struct AnalyticalCube {
-
+        position            : Vector3<F>,
+        scale               : F,
+        rotation            : Vector3<F>,
+        matrix              : SMatrix::<F, 4, 4>,
 }
 
 impl Analytical for AnalyticalCube {
 
     fn new() -> Self {
-        Self {
 
+        Self {
+            position        : Vector3::new(0.0, 0.0, 0.0),
+            scale           : 1.0,
+            rotation        : Vector3::new(0.0, 0.0, 0.0),
+            matrix          : SMatrix::<F, 4, 4>::identity(),
         }
+    }
+
+    fn get_rotation(&mut self) -> &mut Vector3<F> {
+        return &mut self.rotation;
+    }
+
+    fn set_rotation(&mut self, rot: Vector3<F>) {
+        self.rotation = rot;
+    }
+
+    fn update(&mut self) {
+        let mut txx =  Matrix4::new_rotation(Vector3::new(self.rotation.x.to_radians(), self.rotation.y.to_radians(), self.rotation.z.to_radians()));
+        txx = txx.append_scaling(self.scale);
+        txx = txx.append_translation(&self.position);
+        txx = txx.try_inverse().unwrap();
+        self.matrix = txx;
     }
 
     /// https://www.shadertoy.com/view/ld23DV
     fn get_distance_and_normal(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>)> {
         let [ro, rd] = ray;
 
-        let txx = SMatrix::<F, 4, 4>::new(1.0, 0.0, 0.0, 0.0,
-                 0.0, 1.0, 0.0, 0.0,
-                 0.0, 0.0, 1.0, 0.0,
-                 0.0, 0.0, 0.0, 1.0);
-
+        let txx = self.matrix;
         let rdd = (txx.clone() * Vector4::new(rd.x, rd.y, rd.z, 0.0)).xyz();
         let roo = (txx.clone() * Vector4::new(ro.x, ro.y, ro.z, 1.0)).xyz();
 

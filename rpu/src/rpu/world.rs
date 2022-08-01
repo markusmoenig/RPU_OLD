@@ -3,7 +3,7 @@ use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIte
 
 pub struct World {
 
-    pub analytical_objects      : Vec<Box<dyn Analytical>>
+    pub analytical_objects      : Vec<Box<dyn Analytical>>,
 }
 
 impl World {
@@ -20,6 +20,11 @@ impl World {
         Self {
             analytical_objects,
         }
+    }
+
+    pub fn update(&mut self) {
+        self.analytical_objects[0].get_rotation().y += 1.0;
+        self.analytical_objects[0].update();
     }
 
     pub fn render_distributed(&self, camera: &Box<dyn Camera3D>, color: &mut ByteBuffer, _depth: &mut Buffer<f32>) {

@@ -2,15 +2,26 @@
 use crate::prelude::*;
 
 pub struct AnalyticalSphere {
-
-}
+        position            : Vector3<F>,
+        scale               : F,
+        rotation            : Vector3<F>,}
 
 impl Analytical for AnalyticalSphere {
 
     fn new() -> Self {
         Self {
-
+            position        : Vector3::new(0.0, 0.0, 0.0),
+            scale           : 1.0,
+            rotation        : Vector3::new(0.0, 0.0, 0.0),
         }
+    }
+
+    fn get_rotation(&mut self) -> &mut Vector3<F> {
+        return &mut self.rotation;
+    }
+
+    fn set_rotation(&mut self, rot: Vector3<F>) {
+
     }
 
     /// https://www.shadertoy.com/view/4d2XWV
