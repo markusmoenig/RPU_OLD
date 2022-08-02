@@ -25,7 +25,11 @@ pub mod prelude {
     pub use crate::rpu::compiler::Compiler;
     pub use crate::rpu::compiler::Error;
     pub use crate::rpu::compiler::scanner::Scanner;
+    pub use crate::rpu::compiler::scanner::Token;
     pub use crate::rpu::compiler::context::Context;
+    pub use crate::rpu::compiler::node::Node;
+    pub use crate::rpu::compiler::object::Object;
+    pub use crate::rpu::compiler::context::*;
 
     pub use crate::F;
     pub use crate::Color;

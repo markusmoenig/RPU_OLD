@@ -8,6 +8,9 @@ pub mod compiler;
 use crate::prelude::*;
 
 pub struct RPU {
+
+    context             : Option<Context>,
+
     color               : ByteBuffer,
     depth               : Buffer<f32>,
 
@@ -20,6 +23,9 @@ impl RPU {
     pub fn new(width: usize, height: usize) -> Self {
 
         Self {
+
+            context     : None,
+
             color       : ByteBuffer::new(width, height, 0),
             depth       : Buffer::new(width, height, -1.0),
 
@@ -30,12 +36,19 @@ impl RPU {
 
     pub fn compile_from_path(&mut self, path_to_main: PathBuf) -> Result<(), String> {
 
-        let _compiler = Compiler::compile_from_path(path_to_main);
+        let mut compiler = Compiler::new();
+        let rc = compiler.compile_from_path(path_to_main);
+
+        self.context = rc.ok();
 
         Ok(())
     }
 
     pub fn render(&mut self, frame: &mut [u8], rect: (usize, usize, usize, usize)) {
+
+        if let Some(context) = &mut self.context {
+            context.render(frame, rect);
+        }
 
         self.world.update();
         self.world.render_distributed(&mut &self.camera, &mut self.color, &mut self.depth);
