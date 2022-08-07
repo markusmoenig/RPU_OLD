@@ -4,9 +4,10 @@ use crate::prelude::*;
 pub enum Object {
     Empty,
     AnalyticalObject(Box<dyn Analytical>),
+    Element2D(Box<dyn Element2D>),
 }
 
-impl Object  {
+impl Object {
 
     pub fn render(self, ctx: &mut Context ) {
 

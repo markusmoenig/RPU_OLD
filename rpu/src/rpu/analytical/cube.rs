@@ -1,22 +1,42 @@
+use std::collections::BTreeMap;
+
 use crate::prelude::*;
 
-pub struct AnalyticalCube {
+pub struct AnalyticalCube<'a> {
         position            : Vector3<F>,
         scale               : F,
         rotation            : Vector3<F>,
-        matrix              : SMatrix::<F, 4, 4>,
+        txx                 : SMatrix::<F, 4, 4>,
+        txi                 : SMatrix::<F, 4, 4>,
+
+        engine              : ScriptEngine<'a>,
 }
 
-impl Analytical for AnalyticalCube {
+impl Analytical for AnalyticalCube<'_> {
 
     fn new() -> Self {
+
+        let mut engine = ScriptEngine::new();
+        engine.set_vector3("position", Vector3::new(0.0, 0.0, 0.0));
+        engine.set_vector3("rotation", Vector3::new(0.0, 0.0, 0.0));
 
         Self {
             position        : Vector3::new(0.0, 0.0, 0.0),
             scale           : 1.0,
             rotation        : Vector3::new(0.0, 0.0, 0.0),
-            matrix          : SMatrix::<F, 4, 4>::identity(),
+            txx             : SMatrix::<F, 4, 4>::identity(),
+            txi             : SMatrix::<F, 4, 4>::identity(),
+
+            engine          : engine,
         }
+    }
+
+    fn execute(&mut self, code: String) {
+        self.engine.execute(code);
+    }
+
+    fn set_code_block(&mut self, name: String, code: String) {
+        self.engine.set_code_block(name, code);
     }
 
     fn get_rotation(&mut self) -> &mut Vector3<F> {
@@ -28,24 +48,76 @@ impl Analytical for AnalyticalCube {
     }
 
     fn update(&mut self) {
-        let mut txx =  Matrix4::new_rotation(Vector3::new(self.rotation.x.to_radians(), self.rotation.y.to_radians(), self.rotation.z.to_radians()));
-        txx = txx.append_scaling(self.scale);
-        txx = txx.append_translation(&self.position);
-        txx = txx.try_inverse().unwrap();
-        self.matrix = txx;
+        if self.engine.execute_block("onupdate".to_string()) {
+            let r = self.engine.get_vector3("rotation").unwrap();
+            let mut txx =  Matrix4::new_rotation(Vector3::new(r.x.to_radians(), r.y.to_radians(), r.z.to_radians()));
+            txx = txx.append_scaling(self.scale);
+            txx = txx.append_translation(&self.position);
+            self.txi = txx;
+            txx = txx.try_inverse().unwrap();
+            self.txx = txx;
+        }
     }
 
-    /// https://www.shadertoy.com/view/ld23DV
-    fn get_distance_and_normal(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>)> {
+    /// https://iquilezles.org/articles/boxfunctions
+    fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>, Vector2<F>, u8)> {
         let [ro, rd] = ray;
 
-        let txx = self.matrix;
+        let txx = &self.txx;
         let rdd = (txx.clone() * Vector4::new(rd.x, rd.y, rd.z, 0.0)).xyz();
         let roo = (txx.clone() * Vector4::new(ro.x, ro.y, ro.z, 1.0)).xyz();
 
         let rad = Vector3::new(0.75, 0.75, 0.75);
 
         let m: Vector3::<F> = Vector3::new(1.0 / rdd.x, 1.0 / rdd.y, 1.0 / rdd.z);
+        let s: Vector3::<F> = Vector3::new(
+            if rdd.x < 0.0 { 1.0 } else { - 1.0 },
+            if rdd.y < 0.0 { 1.0 } else { - 1.0 },
+            if rdd.z < 0.0 { 1.0 } else { - 1.0 });
+        let t1 = Vector3::new(
+            m.x * (-roo.x + s.x * rad.x),
+            m.y * (-roo.y + s.y * rad.y),
+            m.z * (-roo.z + s.z * rad.z));
+
+        let t2 = Vector3::new(
+            m.x * (-roo.x - s.x * rad.x),
+            m.y * (-roo.y - s.y * rad.y),
+            m.z * (-roo.z - s.z * rad.z));
+
+        let t_n = ((t1.x).max(t1.y)).max(t1.z);
+        let t_f = ((t2.x).min(t2.y)).min(t2.z);
+
+        if t_n > t_f || t_f < 0.0 { return None };
+
+        /*
+    if( t1.x>t1.y && t1.x>t1.z ) { oN=txi[0].xyz*s.x; oU=ro.yz+rd.yz*t1.x; oF=(1+int(s.x))/2;
+    else if( t1.y>t1.z   )       { oN=txi[1].xyz*s.y; oU=ro.zx+rd.zx*t1.y; oF=(5+int(s.y))/2;
+    else                         { oN=txi[2].xyz*s.z; oU=ro.xy+rd.xy*t1.z; oF=(9+int(s.z))/2;
+
+    oT = vec2(tN,tF);*/
+
+        let normal = Vector3::new(0.0, 0.0, 0.0);
+        let uv : Vector2::<F>;
+
+        if t1.x > t1.y && t1.x > t1.z {
+            uv = Vector2::new(
+                roo.y + rdd.y * t1.x,
+                roo.z + rdd.z * t1.x
+            );
+        } else
+        if t1.y > t1.z {
+            uv = Vector2::new(
+                roo.z + rdd.z * t1.y,
+                roo.x + rdd.x * t1.y
+            );
+        } else {
+            uv = Vector2::new(
+                roo.x + rdd.x * t1.z,
+                roo.y + rdd.y * t1.z
+            );
+        }
+
+        /*
         let n = Vector3::new(m.x * roo.x, m.y * roo.y, m.z * roo.z);
         let ma = m.abs();
         let k = Vector3::new(ma.x * rad.x, ma.y * rad.y, ma.z * rad.z);
@@ -56,38 +128,37 @@ impl Analytical for AnalyticalCube {
         let t_n = ((t1.x).max(t1.y)).max(t1.z);
         let t_f = ((t2.x).min(t2.y)).min(t2.z);
 
-        if t_n > t_f || t_f < 0.0 { return None; }
+        if t_n > t_f || t_f < 0.0 { return None; }*/
 
-        let dist = 1.0;
-
-        Some((dist, Vector3::new(0.0, 0.0, 0.0)))
+        Some((t_n, normal, uv, 0))
         /*
-vec4 iBox( in vec3 ro, in vec3 rd, in mat4 txx, in mat4 txi, in vec3 rad )
+bool boxIntersect( in vec3 row, in vec3 rdw, in mat4 txx, in mat4 txi, in vec3 rad,
+                   out vec2 oT, out vec3 oN, out vec2 oU, out int oF )
 {
-    // convert from ray to box space
-	vec3 rdd = (txx*vec4(rd,0.0)).xyz;
-	vec3 roo = (txx*vec4(ro,1.0)).xyz;
+    // convert from world to box space
+    vec3 rd = (txx*vec4(rdw,0.0)).xyz;
+    vec3 ro = (txx*vec4(row,1.0)).xyz;
 
-	// ray-box intersection in box space
-    vec3 m = 1.0/rdd;
-    vec3 n = m*roo;
-    vec3 k = abs(m)*rad;
 
-    vec3 t1 = -n - k;
-    vec3 t2 = -n + k;
+    // ray-box intersection in box space
+    vec3 m = 1.0/rd;
+    vec3 s = vec3((rd.x<0.0)?1.0:-1.0,
+                  (rd.y<0.0)?1.0:-1.0,
+                  (rd.z<0.0)?1.0:-1.0);
+    vec3 t1 = m*(-ro + s*rad);
+    vec3 t2 = m*(-ro - s*rad);
 
-	float tN = max( max( t1.x, t1.y ), t1.z );
-	float tF = min( min( t2.x, t2.y ), t2.z );
+    float tN = max( max( t1.x, t1.y ), t1.z );
+    float tF = min( min( t2.x, t2.y ), t2.z );
 
-	if( tN > tF || tF < 0.0) return vec4(-1.0);
+    if( tN>tF || tF<0.0) return false;
 
-	vec3 nor = -sign(rdd)*step(t1.yzx,t1.xyz)*step(t1.zxy,t1.xyz);
+    // compute normal (in world space), face and UV
+    if( t1.x>t1.y && t1.x>t1.z ) { oN=txi[0].xyz*s.x; oU=ro.yz+rd.yz*t1.x; oF=(1+int(s.x))/2;
+    else if( t1.y>t1.z   )       { oN=txi[1].xyz*s.y; oU=ro.zx+rd.zx*t1.y; oF=(5+int(s.y))/2;
+    else                         { oN=txi[2].xyz*s.z; oU=ro.xy+rd.xy*t1.z; oF=(9+int(s.z))/2;
 
-    // convert to ray space
-
-	nor = (txi * vec4(nor,0.0)).xyz;
-
-	return vec4( tN, nor );
+    oT = vec2(tN,tF);
 }
         */
     }

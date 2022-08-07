@@ -1,19 +1,36 @@
 
 use crate::prelude::*;
 
-pub struct AnalyticalSphere {
+pub struct AnalyticalSphere<'a> {
         position            : Vector3<F>,
         scale               : F,
-        rotation            : Vector3<F>,}
+        rotation            : Vector3<F>,
 
-impl Analytical for AnalyticalSphere {
+        engine              : ScriptEngine<'a>,
+    }
+
+
+impl Analytical for AnalyticalSphere<'_> {
 
     fn new() -> Self {
+
+        let mut engine = ScriptEngine::new();
+        engine.set_vector3("position", Vector3::new(0.0, 0.0, 0.0));
+
         Self {
             position        : Vector3::new(0.0, 0.0, 0.0),
             scale           : 1.0,
             rotation        : Vector3::new(0.0, 0.0, 0.0),
+            engine,
         }
+    }
+
+    fn execute(&mut self, code: String) {
+
+    }
+
+    fn set_code_block(&mut self, name: String, code: String) {
+        self.engine.set_code_block(name, code);
     }
 
     fn get_rotation(&mut self) -> &mut Vector3<F> {
@@ -25,7 +42,7 @@ impl Analytical for AnalyticalSphere {
     }
 
     /// https://www.shadertoy.com/view/4d2XWV
-    fn get_distance_and_normal(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>)> {
+    fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>, Vector2<F>, u8)> {
 
         let [ro, rd] = ray;
 
@@ -37,6 +54,6 @@ impl Analytical for AnalyticalSphere {
         let h = b*b - c;
         if h <0.0 { return None };
         let d = -b - h.sqrt();
-        Some((d, Vector3::new(0.0 , 0.0, 0.0)))
+        Some((d, Vector3::new(0.0 , 0.0, 0.0), Vector2::new(0.0, 0.0), 0))
     }
 }

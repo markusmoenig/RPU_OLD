@@ -24,7 +24,12 @@ fn main() -> Result<(), Error> {
     path_to_main.push("main.rpu");
 
     let mut rpu = RPU::new(width, height);
-    _ = rpu.compile_from_path(path_to_main);
+    let rc = rpu.compile_from_path(path_to_main);
+
+    if rc.is_err() {
+        println!("{:?}", rc.err());
+        return Ok(());
+    }
 
     env_logger::init();
     let event_loop = EventLoop::new();
