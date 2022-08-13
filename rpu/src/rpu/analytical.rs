@@ -8,7 +8,9 @@ pub trait Analytical : Sync + Send {
 
     fn update(&mut self) {}
 
-    fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>, Vector2<F>, u8)>;
+    fn get_bounds(&self) -> (bvh::Vector3, bvh::Vector3);
+
+    fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<HitRecord>;
 
     fn execute(&mut self, code: String);
 

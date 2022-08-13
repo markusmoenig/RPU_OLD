@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use crate::prelude::*;
 
 pub struct AnalyticalCube<'a> {
@@ -16,6 +14,7 @@ impl Analytical for AnalyticalCube<'_> {
         let mut engine = ScriptEngine::new();
         engine.set_vector3("position", Vector3::new(0.0, 0.0, 0.0));
         engine.set_vector3("rotation", Vector3::new(0.0, 0.0, 0.0));
+        engine.set_vector3("size", Vector3::new(0.75, 0.75, 0.75));
         engine.set_float("scale", 1.0);
 
         Self {
@@ -24,6 +23,18 @@ impl Analytical for AnalyticalCube<'_> {
 
             engine          : engine,
         }
+    }
+
+    fn get_bounds(&self) -> (bvh::Vector3, bvh::Vector3) {
+        let p = self.engine.get_vector3("position").unwrap();
+        let radius = self.engine.get_vector3("size").unwrap();
+
+        let position = bvh::Vector3::new(p.x, p.y, p.z);
+
+        let half_size = bvh::Vector3::new(radius.x / 2.0, radius.y / 2.0, radius.z / 2.0);
+        let min = position - half_size;
+        let max = position + half_size;
+        (min, max)
     }
 
     fn execute(&mut self, code: String) {
@@ -50,14 +61,14 @@ impl Analytical for AnalyticalCube<'_> {
     }
 
     /// https://iquilezles.org/articles/boxfunctions
-    fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>, Vector2<F>, u8)> {
+    fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<HitRecord> {
         let [ro, rd] = ray;
 
         let txx = &self.txx;
         let rdd = (txx.clone() * Vector4::new(rd.x, rd.y, rd.z, 0.0)).xyz();
         let roo = (txx.clone() * Vector4::new(ro.x, ro.y, ro.z, 1.0)).xyz();
 
-        let rad = Vector3::new(0.75, 0.75, 0.75);
+        let rad = self.engine.get_vector3("size").unwrap();
 
         let m: Vector3::<F> = Vector3::new(1.0 / rdd.x, 1.0 / rdd.y, 1.0 / rdd.z);
         let s: Vector3::<F> = Vector3::new(
@@ -108,6 +119,7 @@ impl Analytical for AnalyticalCube<'_> {
         }
 
         uv /= 0.75;
+        uv /= 2.0;
 
         /*
         let n = Vector3::new(m.x * roo.x, m.y * roo.y, m.z * roo.z);
@@ -122,7 +134,12 @@ impl Analytical for AnalyticalCube<'_> {
 
         if t_n > t_f || t_f < 0.0 { return None; }*/
 
-        Some((t_n, normal, uv, 0))
+        Some( HitRecord {
+            distance        : t_n,
+            normal          : normal,
+            uv,
+            face            : 0
+        })
         /*
 bool boxIntersect( in vec3 row, in vec3 rdw, in mat4 txx, in mat4 txi, in vec3 rad,
                    out vec2 oT, out vec3 oN, out vec2 oU, out int oF )

@@ -2,13 +2,8 @@
 use crate::prelude::*;
 
 pub struct AnalyticalSphere<'a> {
-        position            : Vector3<F>,
-        scale               : F,
-        rotation            : Vector3<F>,
-
         engine              : ScriptEngine<'a>,
-    }
-
+}
 
 impl Analytical for AnalyticalSphere<'_> {
 
@@ -16,17 +11,27 @@ impl Analytical for AnalyticalSphere<'_> {
 
         let mut engine = ScriptEngine::new();
         engine.set_vector3("position", Vector3::new(0.0, 0.0, 0.0));
+        engine.set_float("radius", 1.0);
 
         Self {
-            position        : Vector3::new(0.0, 0.0, 0.0),
-            scale           : 1.0,
-            rotation        : Vector3::new(0.0, 0.0, 0.0),
             engine,
         }
     }
 
-    fn execute(&mut self, code: String) {
+    fn get_bounds(&self) -> (bvh::Vector3, bvh::Vector3) {
+        let p = self.engine.get_vector3("position").unwrap();
+        let radius = self.engine.get_float("radius").unwrap();
 
+        let position = bvh::Vector3::new(p.x, p.y, p.z);
+
+        let half_size = bvh::Vector3::new(radius, radius, radius);
+        let min = position - half_size;
+        let max = position + half_size;
+        (min, max)
+    }
+
+    fn execute(&mut self, code: String) {
+        self.engine.execute(code);
     }
 
     fn set_code_block(&mut self, name: String, code: String) {
@@ -34,18 +39,25 @@ impl Analytical for AnalyticalSphere<'_> {
     }
 
     /// https://www.shadertoy.com/view/4d2XWV
-    fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>, Vector2<F>, u8)> {
+    fn get_distance_normal_uv_face(&self, ray: &[nalgebra::Vector3<F>; 2]) -> Option<HitRecord> {
 
         let [ro, rd] = ray;
 
-        let sph = Vector4::new(0.0, 0.0, 0.0, 1.0);
+        let p = self.engine.get_vector3("position").unwrap();
+        let radius = self.engine.get_float("radius").unwrap();
 
-        let oc = ro - sph.xyz();
+        let oc = ro - p;
         let b = oc.dot(rd);
-        let c = oc.dot(&oc) - sph.w * sph.w;
+        let c = oc.dot(&oc) - radius * radius;
         let h = b*b - c;
         if h <0.0 { return None };
         let d = -b - h.sqrt();
-        Some((d, Vector3::new(0.0 , 0.0, 0.0), Vector2::new(0.0, 0.0), 0))
+
+        Some( HitRecord {
+            distance        : d,
+            normal          : Vector3::new(0.0 , 0.0, 0.0),
+            uv              : Vector2::new(0.0, 0.0),
+            face            : 0,
+        })
     }
 }

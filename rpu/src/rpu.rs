@@ -4,6 +4,7 @@ pub mod script;
 pub mod camera;
 pub mod analytical;
 pub mod compiler;
+pub mod hit;
 pub mod element2d;
 
 use crate::prelude::*;

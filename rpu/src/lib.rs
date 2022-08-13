@@ -33,6 +33,8 @@ pub mod prelude {
     pub use crate::rpu::compiler::object::Object;
     pub use crate::rpu::compiler::context::*;
 
+    pub use crate::rpu::hit::*;
+
     pub use crate::I;
     pub use crate::F;
     pub use crate::Color;
@@ -40,6 +42,11 @@ pub mod prelude {
     pub use std::path::PathBuf;
 
     pub use rhai::{Engine, Scope};
+
+    pub use bvh::aabb::{AABB, Bounded};
+    pub use bvh::bounding_hierarchy::BHShape;
+    pub use bvh::bvh::BVH;
+    pub use bvh::ray::Ray;
 }
 
 #[macro_use]

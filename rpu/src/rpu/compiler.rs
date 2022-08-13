@@ -83,6 +83,9 @@ impl Compiler {
         if self.parser.error.is_some() {
             return Err(self.parser.error.clone().unwrap());
         }
+
+        // Build the BVH tree
+        context.build();
         Ok(context)
     }
 
@@ -205,7 +208,29 @@ impl Compiler {
         //self.consume(TokenType::Greater, "Expected '>' after object properties.");
 
         if is_root {
-            ctx.root.object = object.unwrap();
+            let mut node = Node::new();
+            node.object = object.unwrap();
+
+            let bounds;
+            match &mut node.object {
+                Object::AnalyticalObject(analytical) => {
+                    analytical.update();
+                    bounds = analytical.get_bounds();
+                },
+                _ => { bounds = (bvh::Vector3::new(0.0, 0.0, 0.0), bvh::Vector3::new(0.0, 0.0, 0.0)) }
+            }
+
+            println!("{:?}", bounds);
+
+            let b = BVHNode {
+                index       : ctx.nodes.len(),
+                node_index  : 0,
+                min         : bounds.0,
+                max         : bounds.1
+            };
+
+            ctx.bvh_nodes.push(b);
+            ctx.nodes.push(node);
         }
     }
 
@@ -272,13 +297,15 @@ impl Compiler {
 
         match &mut object {
             Object::Element2D(texture) => {
-                texture.alloc();
+                //texture.alloc();
             },
             _ => {}
         }
 
         if is_root {
-            ctx.root.object = object;
+            let mut node = Node::new();
+            node.object = object;
+            ctx.nodes.push(node);
         } else {
             ctx.textures.push(object);
         }
