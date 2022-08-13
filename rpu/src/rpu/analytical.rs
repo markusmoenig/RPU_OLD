@@ -6,9 +6,6 @@ use crate::prelude::*;
 pub trait Analytical : Sync + Send {
     fn new() -> Self where Self: Sized;
 
-    fn get_rotation(&mut self) -> &mut Vector3<F>;
-    fn set_rotation(&mut self, rot: Vector3<F>);
-
     fn update(&mut self) {}
 
     fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>, Vector2<F>, u8)>;

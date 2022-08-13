@@ -33,14 +33,6 @@ impl Analytical for AnalyticalSphere<'_> {
         self.engine.set_code_block(name, code);
     }
 
-    fn get_rotation(&mut self) -> &mut Vector3<F> {
-        return &mut self.rotation;
-    }
-
-    fn set_rotation(&mut self, rot: Vector3<F>) {
-
-    }
-
     /// https://www.shadertoy.com/view/4d2XWV
     fn get_distance_normal_uv_face(&self, ray: &[Vector3<F>; 2]) -> Option<(F, Vector3<F>, Vector2<F>, u8)> {
 

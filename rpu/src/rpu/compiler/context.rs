@@ -49,7 +49,7 @@ impl Context {
 
                     let ray = camera.gen_ray(coord);
 
-                    let c = self.get_color(&ray,&[x as usize, y as usize],  &self.root);
+                    let c = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.root);
 
                     pixel.copy_from_slice(&c);
                 }
@@ -72,7 +72,7 @@ impl Context {
 
                 let ray = camera.gen_ray(coord);
 
-                let c = self.get_color(&ray,&[x, y],  &self.root);
+                let c = self.get_color(&ray,&[x, y], &color.size, &self.root);
 
                 color.pixels[i..i + 4].copy_from_slice(&c);
             }
@@ -80,7 +80,7 @@ impl Context {
     }
 
     #[inline(always)]
-    fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], node: &Node) -> Color {
+    fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], size: &[usize;2], node: &Node) -> Color {
         let mut c = [0, 0, 0, 255];
 
             match &node.object {
@@ -91,27 +91,20 @@ impl Context {
                         let tex_index= 0_usize;
                         match &self.textures[tex_index] {
                             Object::Element2D(el) => {
-                                let [tex_width, tex_height] = el.get_size();
                                 let uv = hit.2;
-                                let x = (uv.x * tex_width as F) + tex_width as F / 2.0;
-                                let y = (uv.y * tex_height as F) + tex_height as F / 2.0;
-                                //println!("{}, {}", x, y);
-                                c = el.get_color_at(&[x as usize, y as usize]);
+                                c = el.get_color_at(&[uv.x, uv.y]);
                             },
                             _ => {},
                         }
-
-                        //c[0] = 255;
-
                     }
                 },
                 Object::Element2D(element) => {
-                    let [width, height]= element.get_size();
+                    let [width, height]= size;
                     let [x, y]= p;
 
-                    if *x < width && *y < height {
-                        c = element.get_color_at(p);
-                    }
+                    let xx = (*x as F / *width as F) * 2.0 - 1.0;
+                    let yy = (*y as F / *height as F) * 2.0 - 1.0;
+                    c = element.get_color_at(&[xx, yy]);
                 }
             }
         c

@@ -3,9 +3,6 @@ use std::collections::BTreeMap;
 use crate::prelude::*;
 
 pub struct AnalyticalCube<'a> {
-        position            : Vector3<F>,
-        scale               : F,
-        rotation            : Vector3<F>,
         txx                 : SMatrix::<F, 4, 4>,
         txi                 : SMatrix::<F, 4, 4>,
 
@@ -19,11 +16,9 @@ impl Analytical for AnalyticalCube<'_> {
         let mut engine = ScriptEngine::new();
         engine.set_vector3("position", Vector3::new(0.0, 0.0, 0.0));
         engine.set_vector3("rotation", Vector3::new(0.0, 0.0, 0.0));
+        engine.set_float("scale", 1.0);
 
         Self {
-            position        : Vector3::new(0.0, 0.0, 0.0),
-            scale           : 1.0,
-            rotation        : Vector3::new(0.0, 0.0, 0.0),
             txx             : SMatrix::<F, 4, 4>::identity(),
             txi             : SMatrix::<F, 4, 4>::identity(),
 
@@ -39,20 +34,15 @@ impl Analytical for AnalyticalCube<'_> {
         self.engine.set_code_block(name, code);
     }
 
-    fn get_rotation(&mut self) -> &mut Vector3<F> {
-        return &mut self.rotation;
-    }
-
-    fn set_rotation(&mut self, rot: Vector3<F>) {
-        self.rotation = rot;
-    }
-
     fn update(&mut self) {
         if self.engine.execute_block("onupdate".to_string()) {
             let r = self.engine.get_vector3("rotation").unwrap();
+            let p = self.engine.get_vector3("position").unwrap();
+            let s = self.engine.get_float("scale").unwrap();
+
             let mut txx =  Matrix4::new_rotation(Vector3::new(r.x.to_radians(), r.y.to_radians(), r.z.to_radians()));
-            txx = txx.append_scaling(self.scale);
-            txx = txx.append_translation(&self.position);
+            txx = txx.append_scaling(s);
+            txx = txx.append_translation(&p);
             self.txi = txx;
             txx = txx.try_inverse().unwrap();
             self.txx = txx;
@@ -117,7 +107,7 @@ impl Analytical for AnalyticalCube<'_> {
             );
         }
 
-        //uv *= 0.67;
+        uv /= 0.75;
 
         /*
         let n = Vector3::new(m.x * roo.x, m.y * roo.y, m.z * roo.z);

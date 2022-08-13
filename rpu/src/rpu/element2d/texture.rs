@@ -27,18 +27,22 @@ impl Element2D for Texture<'_> {
         self.color = Some(ByteBuffer::new(width as usize, height as usize, 255));
     }
 
-    fn get_color_at(&self, p: &[usize; 2]) -> Color {
+    fn get_color_at(&self, p: &[F; 2]) -> Color {
         let mut c = [255, 0, 0, 255];
 
-        let [width, height] = self.get_size();
+        //let [width, height] = self.get_size();
         let [x, y] = p;
 
-        //let v = Vector2::new(width / 2 - p[0], height / 2 - p[1]);
+        let t = SMatrix::<F, 2, 1>::new(*x, *y);
 
-        let t = SMatrix::<F, 2, 1>::new((width as isize / 2 - *x as isize) as F, (height as isize / 2 - *y as isize) as F);
-
-        if t.norm() - 149.0 <= 0.0 {
+        if t.norm() - 1.0 <= 0.0 {
             c[1] = 255;
+
+            //let xx = (*x + 1.0) / 2.0;
+            //let yy = (-*y + 1.0) / 2.0;
+
+            //c[0] = (xx * 255.0) as u8;
+            //c[1] = (yy * 255.0) as u8;
         }
 
         //println!("{:?}", p);
