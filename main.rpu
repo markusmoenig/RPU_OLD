@@ -1,8 +1,8 @@
 // -- RPU v0.1
 
-Texture*<>
+Texture<>
 
-Cube<rotation: F3(0.0, 0.0, 45.0)>
+Cube*<rotation: F3(0.0, 0.0, 45.0)>
     <onUpdate: rotation.y += 1;>
 
 Sphere<>

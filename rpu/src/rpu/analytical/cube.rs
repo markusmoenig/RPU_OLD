@@ -97,7 +97,7 @@ impl Analytical for AnalyticalCube<'_> {
     oT = vec2(tN,tF);*/
 
         let normal = Vector3::new(0.0, 0.0, 0.0);
-        let uv : Vector2::<F>;
+        let mut uv : Vector2::<F>;
 
         if t1.x > t1.y && t1.x > t1.z {
             uv = Vector2::new(
@@ -116,6 +116,8 @@ impl Analytical for AnalyticalCube<'_> {
                 roo.y + rdd.y * t1.z
             );
         }
+
+        //uv *= 0.67;
 
         /*
         let n = Vector3::new(m.x * roo.x, m.y * roo.y, m.z * roo.z);

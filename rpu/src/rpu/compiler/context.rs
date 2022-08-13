@@ -2,7 +2,7 @@ use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 
 pub struct Context {
-
+    pub textures                : Vec<Object>,
     pub root                    : Node,
 }
 
@@ -10,6 +10,7 @@ impl Context {
 
     pub fn new() -> Self {
         Self {
+            textures            : vec![],
             root                : Node::new(),
         }
     }
@@ -85,14 +86,32 @@ impl Context {
             match &node.object {
                 Object::Empty => {},
                 Object::AnalyticalObject(object) => {
-                    if let Some(_dn) = object.get_distance_normal_uv_face(&ray) {
-                        c[0] = 255;
+                    if let Some(hit) = object.get_distance_normal_uv_face(&ray) {
+
+                        let tex_index= 0_usize;
+                        match &self.textures[tex_index] {
+                            Object::Element2D(el) => {
+                                let [tex_width, tex_height] = el.get_size();
+                                let uv = hit.2;
+                                let x = (uv.x * tex_width as F) + tex_width as F / 2.0;
+                                let y = (uv.y * tex_height as F) + tex_height as F / 2.0;
+                                //println!("{}, {}", x, y);
+                                c = el.get_color_at(&[x as usize, y as usize]);
+                            },
+                            _ => {},
+                        }
+
+                        //c[0] = 255;
+
                     }
                 },
                 Object::Element2D(element) => {
                     let [width, height]= element.get_size();
+                    let [x, y]= p;
 
-                    c = element.get_color_at(p);
+                    if *x < width && *y < height {
+                        c = element.get_color_at(p);
+                    }
                 }
             }
         c

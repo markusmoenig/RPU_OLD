@@ -279,6 +279,8 @@ impl Compiler {
 
         if is_root {
             ctx.root.object = object;
+        } else {
+            ctx.textures.push(object);
         }
     }
 

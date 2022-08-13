@@ -35,12 +35,11 @@ impl Element2D for Texture<'_> {
 
         //let v = Vector2::new(width / 2 - p[0], height / 2 - p[1]);
 
-        let t = SMatrix::<F, 2, 1>::new((width / 2 - x) as F, (height / 2 - y) as F);
+        let t = SMatrix::<F, 2, 1>::new((width as isize / 2 - *x as isize) as F, (height as isize / 2 - *y as isize) as F);
 
-        if t.magnitude() - 100.0 < 0.0 {
+        if t.norm() - 149.0 <= 0.0 {
             c[1] = 255;
         }
-
 
         //println!("{:?}", p);
         c
@@ -53,8 +52,6 @@ impl Element2D for Texture<'_> {
         }
         [0, 0]
     }
-
-
 
     fn execute(&mut self, code: String) {
         self.engine.execute(code);
