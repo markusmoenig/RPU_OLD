@@ -47,6 +47,7 @@ impl Analytical for AnalyticalCube<'_> {
 
     fn update(&mut self) {
         if self.engine.execute_block("onupdate".to_string()) {
+
             let r = self.engine.get_vector3("rotation").unwrap();
             let p = self.engine.get_vector3("position").unwrap();
             let s = self.engine.get_float("scale").unwrap();

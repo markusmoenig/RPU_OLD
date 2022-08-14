@@ -5,8 +5,8 @@ pub struct Context {
     pub textures                : Vec<Object>,
     pub nodes                   : Vec<Node>,
 
-    pub bvh_nodes               : Vec<BVHNode>,
-    bvh                         : Option<BVH>,
+    // pub bvh_nodes               : Vec<BVHNode>,
+    // bvh                         : Option<BVH>,
 }
 
 impl Context {
@@ -15,8 +15,9 @@ impl Context {
         Self {
             textures            : vec![],
             nodes               : vec![],
-            bvh_nodes           : vec![],
-            bvh                 : None
+
+            // bvh_nodes           : vec![],
+            // bvh                 : None
         }
     }
 
@@ -33,7 +34,7 @@ impl Context {
     }
 
     pub fn build(&mut self) {
-        self.bvh = Some(BVH::build(&mut self.bvh_nodes));
+        //self.bvh = Some(BVH::build(&mut self.bvh_nodes));
     }
 
     pub fn render_distributed(&mut self, camera: &Box<dyn Camera3D>, color: &mut ByteBuffer, _depth: &mut Buffer<f32>) {
@@ -43,6 +44,9 @@ impl Context {
 
         const LINES: usize = 20;
         let ratio = width as F / height as F;
+
+        // let num_objects = self.bvh_nodes.len();
+        // println!("num {}", num_objects);
 
         color.pixels
             .par_rchunks_exact_mut(width * LINES * 4)
@@ -60,33 +64,49 @@ impl Context {
 
                     let ray = camera.gen_ray(coord);
 
-                    if let Some(bvh) = &self.bvh {
-                        let r = bvh::ray::Ray::new(bvh::Vector3::new(ray[0].x, ray[0].y, ray[0].z), bvh::Vector3::new(ray[1].x, ray[1].y, ray[1].z));
+                    let c = [0, 0, 0, 255];
 
-                        let hit_bvh_nodes = bvh.traverse(&r, &self.bvh_nodes);
-                        if hit_bvh_nodes.len() != 1 {
-                            println!("note {}", hit_bvh_nodes.len());
+                    /*
+                    if num_objects > 1 {
+                        if let Some(bvh) = &self.bvh {
+                            let [ro, rd] = ray;
+                            let r = bvh::ray::Ray::new(bvh::Vector3::new(ro.x, ro.y, ro.z), bvh::Vector3::new(rd.x, rd.y, rd.z));
+
+                            let hit_bvh_nodes = bvh.traverse(&r, &self.bvh_nodes);
+                            if hit_bvh_nodes.len() != 1 {
+                                println!("note {}", hit_bvh_nodes.len());
+                            }
+                            let mut hit = false;
+                            for n in &hit_bvh_nodes {
+                                if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[n.index]) {
+                                    pixel.copy_from_slice(&c);
+                                    hit = true;
+                                    break;
+                                }
+                            }
+                            if hit == false {
+                                pixel.copy_from_slice(&c);
+                            }
                         }
+                    } else {
+                        */
                         let mut hit = false;
-                        for n in &hit_bvh_nodes {
-                            if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[n.index]) {
+                        for i in 0..self.nodes.len() {
+                            if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[i]) {
                                 pixel.copy_from_slice(&c);
                                 hit = true;
                                 break;
                             }
                         }
                         if hit == false {
-                            let c = [0, 0, 0, 255];
                             pixel.copy_from_slice(&c);
                         }
-                    }
-
-                    //let c = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[0]);
-                    //pixel.copy_from_slice(&c);
+                    // }
                 }
             });
     }
 
+    /*
     pub fn render(&mut self, camera: &Box<dyn Camera3D>, color: &mut ByteBuffer, _depth: &mut Buffer<f32>) {
 
         self.update();
@@ -103,11 +123,11 @@ impl Context {
 
                 let ray = camera.gen_ray(coord);
 
-                //let c = self.get_color(&ray,&[x, y], &color.size, &self.root);
-                //color.pixels[i..i + 4].copy_from_slice(&c);
+                let c = self.get_color(&ray,&[x, y], &color.size, &self.root);
+                color.pixels[i..i + 4].copy_from_slice(&c);
             }
         }
-    }
+    }*/
 
     #[inline(always)]
     fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], size: &[usize;2], node: &Node) -> Option<Color> {

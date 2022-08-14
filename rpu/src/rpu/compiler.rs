@@ -122,6 +122,7 @@ impl Compiler {
 
     /// Reads an 3D object (analytical or SDF).
     fn object3d(&mut self, ctx: &mut Context) {
+
         let mut object : Option<Object> = None;
         if self.parser.current.lexeme == "Cube" {
             object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
@@ -131,21 +132,14 @@ impl Compiler {
         }
 
         self.advance();
-        let mut is_root = false;
+        // let mut is_root = false;
 
         if object.is_some() && self.check(TokenType::Star) {
-            is_root = true;
+            // is_root = true;
             self.advance();
         }
 
         self.consume(TokenType::Less, "Expected '<' after object identifier.");
-        // if self.check(TokenType::Less) == false {
-        //     self.error_at_current("Expected '<' after object identifier.");
-        // }
-
-        //do {
-
-        //} while self.parser.current.kind == TokenType::Comma;
 
         if self.parser.current.kind != TokenType::Greater {
             loop {
@@ -198,7 +192,7 @@ impl Compiler {
                 self.consume(TokenType::Greater, "Expected '>' after object properties.");
                 //self.advance();
 
-                if self.parser.current.kind != TokenType::Less {
+                if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
                     break;
                 } else {
                     self.advance();
@@ -207,21 +201,22 @@ impl Compiler {
         }
         //self.consume(TokenType::Greater, "Expected '>' after object properties.");
 
-        if is_root {
+        // if is_root {
             let mut node = Node::new();
             node.object = object.unwrap();
 
+            /*
             let bounds;
             match &mut node.object {
                 Object::AnalyticalObject(analytical) => {
-                    analytical.update();
                     bounds = analytical.get_bounds();
                 },
                 _ => { bounds = (bvh::Vector3::new(0.0, 0.0, 0.0), bvh::Vector3::new(0.0, 0.0, 0.0)) }
-            }
+            }*/
 
-            println!("{:?}", bounds);
+            //println!("{:?}", bounds);
 
+            /*
             let b = BVHNode {
                 index       : ctx.nodes.len(),
                 node_index  : 0,
@@ -229,9 +224,9 @@ impl Compiler {
                 max         : bounds.1
             };
 
-            ctx.bvh_nodes.push(b);
+            ctx.bvh_nodes.push(b);*/
             ctx.nodes.push(node);
-        }
+        // }
     }
 
     /// Reads a texture
