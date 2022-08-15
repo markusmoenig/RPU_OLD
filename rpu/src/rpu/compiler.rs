@@ -85,7 +85,6 @@ impl Compiler {
         }
 
         // Build the BVH tree
-        context.build();
         Ok(context)
     }
 
@@ -94,9 +93,10 @@ impl Compiler {
         self.advance();
 
         while !self.matches(TokenType::Eof) {
-            //println!("{:?}", self.parser.current);
+            println!("{:?}", self.parser.current);
 
             let analytical = ["cube", "sphere"];
+            let mut consumed = false;
 
             if self.indent() == 0 {
                 if self.parser.current.kind == TokenType::Identifier {
@@ -105,6 +105,7 @@ impl Compiler {
 
                     if analytical.contains(&id){
                         self.object3d(ctx);
+                        consumed = true;
                     } else
                     if id == "texture" {
                         self.texture(ctx);
@@ -112,7 +113,9 @@ impl Compiler {
                 }
             }
 
-            self.advance();
+            if consumed == false {
+                self.advance();
+            }
 
             if self.parser.error.is_some() {
                 break;
@@ -201,32 +204,10 @@ impl Compiler {
         }
         //self.consume(TokenType::Greater, "Expected '>' after object properties.");
 
-        // if is_root {
-            let mut node = Node::new();
-            node.object = object.unwrap();
+        let mut node = Node::new();
+        node.object = object.unwrap();
+        ctx.nodes.push(node);
 
-            /*
-            let bounds;
-            match &mut node.object {
-                Object::AnalyticalObject(analytical) => {
-                    bounds = analytical.get_bounds();
-                },
-                _ => { bounds = (bvh::Vector3::new(0.0, 0.0, 0.0), bvh::Vector3::new(0.0, 0.0, 0.0)) }
-            }*/
-
-            //println!("{:?}", bounds);
-
-            /*
-            let b = BVHNode {
-                index       : ctx.nodes.len(),
-                node_index  : 0,
-                min         : bounds.0,
-                max         : bounds.1
-            };
-
-            ctx.bvh_nodes.push(b);*/
-            ctx.nodes.push(node);
-        // }
     }
 
     /// Reads a texture

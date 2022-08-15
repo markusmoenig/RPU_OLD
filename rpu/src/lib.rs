@@ -42,11 +42,6 @@ pub mod prelude {
     pub use std::path::PathBuf;
 
     pub use rhai::{Engine, Scope};
-
-    pub use bvh::aabb::{AABB, Bounded};
-    pub use bvh::bounding_hierarchy::BHShape;
-    pub use bvh::bvh::BVH;
-    pub use bvh::ray::Ray;
 }
 
 #[macro_use]

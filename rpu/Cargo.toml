@@ -11,4 +11,3 @@ repository = "https://github.com/markusmoenig/RPU.git"
 nalgebra = "0.31.0"
 rayon = "1.5.3"
 rhai = { version = "*", features = ["sync", "f32_float", "only_i32"] }
-bvh = "0.6.0"

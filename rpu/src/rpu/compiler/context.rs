@@ -4,9 +4,6 @@ use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIte
 pub struct Context {
     pub textures                : Vec<Object>,
     pub nodes                   : Vec<Node>,
-
-    // pub bvh_nodes               : Vec<BVHNode>,
-    // bvh                         : Option<BVH>,
 }
 
 impl Context {
@@ -15,9 +12,6 @@ impl Context {
         Self {
             textures            : vec![],
             nodes               : vec![],
-
-            // bvh_nodes           : vec![],
-            // bvh                 : None
         }
     }
 
@@ -31,10 +25,6 @@ impl Context {
                 _ => {},
             }
         }
-    }
-
-    pub fn build(&mut self) {
-        //self.bvh = Some(BVH::build(&mut self.bvh_nodes));
     }
 
     pub fn render_distributed(&mut self, camera: &Box<dyn Camera3D>, color: &mut ByteBuffer, _depth: &mut Buffer<f32>) {
@@ -63,45 +53,18 @@ impl Context {
                     let coord = Vector2::new((xx - 0.5) * ratio, yy - 0.5);
 
                     let ray = camera.gen_ray(coord);
-
-                    let c = [0, 0, 0, 255];
-
-                    /*
-                    if num_objects > 1 {
-                        if let Some(bvh) = &self.bvh {
-                            let [ro, rd] = ray;
-                            let r = bvh::ray::Ray::new(bvh::Vector3::new(ro.x, ro.y, ro.z), bvh::Vector3::new(rd.x, rd.y, rd.z));
-
-                            let hit_bvh_nodes = bvh.traverse(&r, &self.bvh_nodes);
-                            if hit_bvh_nodes.len() != 1 {
-                                println!("note {}", hit_bvh_nodes.len());
-                            }
-                            let mut hit = false;
-                            for n in &hit_bvh_nodes {
-                                if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[n.index]) {
-                                    pixel.copy_from_slice(&c);
-                                    hit = true;
-                                    break;
-                                }
-                            }
-                            if hit == false {
-                                pixel.copy_from_slice(&c);
-                            }
-                        }
-                    } else {
-                        */
-                        let mut hit = false;
-                        for i in 0..self.nodes.len() {
-                            if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[i]) {
-                                pixel.copy_from_slice(&c);
-                                hit = true;
-                                break;
-                            }
-                        }
-                        if hit == false {
+                    let mut hit = false;
+                    for i in 0..self.nodes.len() {
+                        if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[i]) {
                             pixel.copy_from_slice(&c);
+                            hit = true;
+                            break;
                         }
-                    // }
+                    }
+                    if hit == false {
+                        let c = [0, 0, 0, 255];
+                        pixel.copy_from_slice(&c);
+                    }
                 }
             });
     }

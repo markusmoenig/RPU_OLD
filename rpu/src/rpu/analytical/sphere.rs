@@ -18,13 +18,13 @@ impl Analytical for AnalyticalSphere<'_> {
         }
     }
 
-    fn get_bounds(&self) -> (bvh::Vector3, bvh::Vector3) {
+    fn get_bounds(&self) -> (Vector3<F>, Vector3<F>) {
         let p = self.engine.get_vector3("position").unwrap();
         let radius = self.engine.get_float("radius").unwrap();
 
-        let position = bvh::Vector3::new(p.x, p.y, p.z);
+        let position = Vector3::new(p.x, p.y, p.z);
 
-        let half_size = bvh::Vector3::new(radius, radius, radius);
+        let half_size = Vector3::new(radius, radius, radius);
         let min = position - half_size;
         let max = position + half_size;
         (min, max)
