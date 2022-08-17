@@ -17,12 +17,17 @@ pub mod prelude {
     pub use crate::rpu::script::ScriptEngine;
     pub use crate::rpu::element2d::Element2D;
 
-    pub use crate::rpu::camera::Camera3D;
+    pub use crate::rpu::camera::*;
     pub use crate::rpu::camera::pinhole::Pinhole;
+
+    pub use crate::rpu::sdf3d::SDF3D;
+    pub use crate::rpu::sdf3d::sphere::SDF3DSphere;
 
     pub use crate::rpu::analytical::Analytical;
     pub use crate::rpu::analytical::sphere::AnalyticalSphere;
     pub use crate::rpu::analytical::cube::AnalyticalCube;
+
+    pub use crate::rpu::layout3d::Layout3D;
 
     pub use crate::rpu::compiler::Compiler;
     pub use crate::rpu::compiler::Error;
@@ -40,6 +45,7 @@ pub mod prelude {
     pub use crate::Color;
 
     pub use std::path::PathBuf;
+    pub use std::collections::HashMap;
 
     pub use rhai::{Engine, Scope};
 }

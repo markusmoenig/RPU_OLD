@@ -1,6 +1,7 @@
 
 use crate::prelude::*;
 
+#[derive()]
 pub struct AnalyticalSphere<'a> {
         engine              : ScriptEngine<'a>,
 }

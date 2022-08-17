@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive()]
 pub struct AnalyticalCube<'a> {
         txx                 : SMatrix::<F, 4, 4>,
         txi                 : SMatrix::<F, 4, 4>,

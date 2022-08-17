@@ -1,9 +1,13 @@
+use std::collections::HashMap;
+
 use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 
 pub struct Context {
     pub textures                : Vec<Object>,
     pub nodes                   : Vec<Node>,
+    pub layouts                 : Vec<Object>,
+    pub symbols_node_index      : HashMap<char, usize>,
 }
 
 impl Context {
@@ -12,6 +16,8 @@ impl Context {
         Self {
             textures            : vec![],
             nodes               : vec![],
+            layouts             : vec![],
+            symbols_node_index  : HashMap::new(),
         }
     }
 
@@ -54,11 +60,18 @@ impl Context {
 
                     let ray = camera.gen_ray(coord);
                     let mut hit = false;
-                    for i in 0..self.nodes.len() {
-                        if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[i]) {
+                    if let Some(layout) = self.layouts.last() {
+                        if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &layout) {
                             pixel.copy_from_slice(&c);
                             hit = true;
-                            break;
+                        }
+                    } else {
+                        for i in 0..self.nodes.len() {
+                            if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[i].object) {
+                                pixel.copy_from_slice(&c);
+                                hit = true;
+                                break;
+                            }
                         }
                     }
                     if hit == false {
@@ -93,35 +106,81 @@ impl Context {
     }*/
 
     #[inline(always)]
-    fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], size: &[usize;2], node: &Node) -> Option<Color> {
+    fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], size: &[usize;2], object: &Object) -> Option<Color> {
         let mut c = [0, 0, 0, 255];
 
-            match &node.object {
-                Object::Empty => {},
-                Object::AnalyticalObject(object) => {
-                    if let Some(hit) = object.get_distance_normal_uv_face(&ray) {
+        match object {
+            Object::Empty => {},
+            Object::AnalyticalObject(object) => {
+                if let Some(hit) = object.get_distance_normal_uv_face(&ray) {
 
-                        let tex_index= 0_usize;
-                        match &self.textures[tex_index] {
-                            Object::Element2D(el) => {
-                                let uv = hit.uv;
-                                c = el.get_color_at(&[uv.x, -uv.y]);
-                            },
-                            _ => {},
-                        }
-                    } else {
-                        return None;
+                    let tex_index= 0_usize;
+                    match &self.textures[tex_index] {
+                        Object::Element2D(el) => {
+                            let uv = hit.uv;
+                            c = el.get_color_at(&[uv.x, -uv.y]);
+                        },
+                        _ => {},
                     }
-                },
-                Object::Element2D(element) => {
-                    let [width, height]= size;
-                    let [x, y]= p;
-
-                    let xx = (*x as F / *width as F) - 0.5;
-                    let yy = (*y as F / *height as F) - 0.5;
-                    c = element.get_color_at(&[xx, -yy]);
+                } else {
+                    return None;
                 }
-            }
+            },
+            Object::SDF3D(object) => {
+
+                let [ro, rd] = ray;
+                let mut t = 0.01;
+                let translate = Vector3::new(0.0, 0.0, 0.0);
+                for _i in 0..14 {
+                    let p = ro + rd * t;
+                    let d = object.get_distance(&p, &translate);
+                    if d < 0.001 {
+                        c[0] = 255;
+                        return Some(c);
+                    }
+                    t += d;
+                }
+                return None;
+                /*
+                if let Some(hit) = object.get_distance_normal_uv_face(&ray) {
+
+                    let tex_index= 0_usize;
+                    match &self.textures[tex_index] {
+                        Object::Element2D(el) => {
+                            let uv = hit.uv;
+                            c = el.get_color_at(&[uv.x, -uv.y]);
+                        },
+                        _ => {},
+                    }
+                } else {
+                    return None;
+                }*/
+            },
+            Object::Layout3D(layout) => {
+                if let Some(hit) = layout.traverse(&ray, &self) {
+
+                    let tex_index= 0_usize;
+                    match &self.textures[tex_index] {
+                        Object::Element2D(el) => {
+                            let uv = hit.uv;
+                            c = el.get_color_at(&[uv.x, -uv.y]);
+                        },
+                        _ => {},
+                    }
+                } else {
+                    return None;
+                }
+            },
+            Object::Element2D(element) => {
+                let [width, height]= size;
+                let [x, y]= p;
+
+                let xx = (*x as F / *width as F) - 0.5;
+                let yy = (*y as F / *height as F) - 0.5;
+                c = element.get_color_at(&[xx, -yy]);
+            },
+            _ => {},
+        }
         Some(c)
     }
 

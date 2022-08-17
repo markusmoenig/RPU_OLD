@@ -7,7 +7,7 @@ use crate::prelude::*;
 
 use self::scanner::TokenType;
 
-use super::element2d::texture::Texture;
+use super::{element2d::texture::Texture, layout3d::grid2d::Grid2D};
 
 #[derive(Clone, Debug)]
 pub enum ErrorType {
@@ -84,7 +84,6 @@ impl Compiler {
             return Err(self.parser.error.clone().unwrap());
         }
 
-        // Build the BVH tree
         Ok(context)
     }
 
@@ -93,9 +92,9 @@ impl Compiler {
         self.advance();
 
         while !self.matches(TokenType::Eof) {
-            println!("{:?}", self.parser.current);
 
             let analytical = ["cube", "sphere"];
+            let layouts = ["grid2d"];
             let mut consumed = false;
 
             if self.indent() == 0 {
@@ -107,8 +106,13 @@ impl Compiler {
                         self.object3d(ctx);
                         consumed = true;
                     } else
+                    if layouts.contains(&id) {
+                        self.layout3d(ctx);
+                        consumed = true;
+                    } else
                     if id == "texture" {
                         self.texture(ctx);
+                        consumed = true;
                     }
                 }
             }
@@ -127,87 +131,110 @@ impl Compiler {
     fn object3d(&mut self, ctx: &mut Context) {
 
         let mut object : Option<Object> = None;
+        let mut symbol : Option<char> = None;
+
         if self.parser.current.lexeme == "Cube" {
             object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
         }
         if self.parser.current.lexeme == "Sphere" {
-            object = Some(Object::AnalyticalObject(Box::new(AnalyticalSphere::new())));
+            object = Some(Object::SDF3D(Box::new(SDF3DSphere::new())));
         }
 
         self.advance();
-        // let mut is_root = false;
 
-        if object.is_some() && self.check(TokenType::Star) {
-            // is_root = true;
+        if object.is_some() && self.check(TokenType::Apostrophe) {
             self.advance();
+            let c = self.parser.current.lexeme.chars().next();
+            if let Some(c) = c {
+                symbol = Some(c);
+                self.advance();
+            }
         }
 
         self.consume(TokenType::Less, "Expected '<' after object identifier.");
 
-        if self.parser.current.kind != TokenType::Greater {
-            loop {
-                let key = self.parser.current.lexeme.clone().to_lowercase();
-                self.consume(TokenType::Identifier, "Expected identifier after '<'.");
-                self.consume(TokenType::Colon, "Expected ':' after identifier.");
-
-                let mut value = "".to_string();
-
-                //let value = self.parser.current.lexeme.clone();
-                //match self.parser.current.kind {
-                //     TokenType::String => self.gcn().unwrap().add_property(name.clone(),
-                //     Value::String(v.replace("\"", ""))),
-                //     _ => { self.error_at_current(format!("Unknown property value for '{}'", name).as_str()); }
-                // }
-
-                while /* !self.check(TokenType::Comma) &&*/ !self.check(TokenType::Greater) && !self.check(TokenType::Eof) {
-                    value += self.parser.current.lexeme.as_mut_str();
-                    self.advance();
-                }
-
-                let code_blocks = ["onupdate".to_string()];
-
-                if code_blocks.contains(&key) {
-                    if let Some(object) = &mut object {
-                        match object {
-                            Object::AnalyticalObject(analytical) => {
-                                //analytical.execute(code);
-                                analytical.set_code_block(key.clone(), value.clone());
-                            },
-                            _ => {}
-                        }
-                    }
-                } else {
-                    let code = format!("let {} = {}", key, value);
-
-                    if let Some(object) = &mut object {
-                        match object {
-                            Object::AnalyticalObject(analytical) => {
-                                analytical.execute(code);
-                                analytical.update();
-                            },
-                            _ => {}
-                        }
-                    }
-                }
-
-                println!("{:?}, {:?}", key, value);
-                //self.advance();
-                self.consume(TokenType::Greater, "Expected '>' after object properties.");
-                //self.advance();
-
-                if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
-                    break;
-                } else {
-                    self.advance();
-                }
-            }
+        if let Some(object) = &mut object {
+            self.parse_object_properties(object);
         }
-        //self.consume(TokenType::Greater, "Expected '>' after object properties.");
 
         let mut node = Node::new();
         node.object = object.unwrap();
-        ctx.nodes.push(node);
 
+        if let Some(symbol) = symbol {
+            ctx.symbols_node_index.insert(symbol, ctx.nodes.len());
+        }
+        ctx.nodes.push(node);
+    }
+
+    /// Reads a 3d layout.
+    fn layout3d(&mut self, ctx: &mut Context) {
+
+        let mut object : Option<Object> = None;
+        let mut symbol : Option<char> = None;
+
+        if self.parser.current.lexeme.to_lowercase() == "grid2d" {
+            object = Some(Object::Layout3D(Box::new(Grid2D::new())));
+        }
+
+        self.advance();
+
+        if object.is_some() && self.check(TokenType::Apostrophe) {
+            self.advance();
+            let c = self.parser.current.lexeme.chars().next();
+            if let Some(c) = c {
+                symbol = Some(c);
+                self.advance();
+            }
+        }
+
+        self.consume(TokenType::Less, "Expected '<' after object identifier.");
+
+        if let Some(object) = &mut object {
+            self.parse_object_properties(object);
+
+            let mut map : HashMap<(usize, usize), usize> = HashMap::new();
+
+            let mut x = 0;
+            let mut y = 0;
+
+            let mut first = true;
+
+            loop {
+                if self.check(TokenType::Colon) {
+                    // Next line
+                    if first == true {
+                        first = false;
+                    } else {
+                        y += 1;
+                    }
+                    self.advance();
+                } else {
+                    break;
+                }
+
+                let symbols = self.parser.current.lexeme.chars();
+
+                for c in symbols {
+                    if let Some(index) = ctx.symbols_node_index.get(&c) {
+                        map.insert((x, y), *index);
+                        x+= 1;
+                    } else {
+                        self.error_at_current(format!("Undefined instance symbol '{}'.", c).as_str());
+                        break;
+                    }
+                }
+                self.advance();
+            }
+            match object {
+                Object::Layout3D(layout) => layout.set_map_element(map),
+                _ => {}
+            }
+        }
+
+        if let Some(symbol) = symbol {
+            ctx.symbols_node_index.insert(symbol, ctx.nodes.len());
+        }
+        ctx.layouts.push(object.unwrap());
     }
 
     /// Reads a texture
@@ -224,6 +251,27 @@ impl Compiler {
 
         self.consume(TokenType::Less, "Expected '<' after object identifier.");
 
+        self.parse_object_properties(&mut object);
+
+        match &mut object {
+            Object::Element2D(texture) => {
+                //texture.alloc();
+            },
+            _ => {}
+        }
+
+        if is_root {
+            let mut node = Node::new();
+            node.object = object;
+            ctx.nodes.push(node);
+        } else {
+            ctx.textures.push(object);
+        }
+    }
+
+    /// Parses the properties for the given object
+    fn parse_object_properties(&mut self, object: &mut Object) {
+
         if self.parser.current.kind != TokenType::Greater {
             loop {
                 let key = self.parser.current.lexeme.clone().to_lowercase();
@@ -240,50 +288,46 @@ impl Compiler {
                 let code_blocks = ["onupdate".to_string()];
 
                 if code_blocks.contains(&key) {
-                    match &mut object {
+                    match object {
+                        Object::AnalyticalObject(analytical) => {
+                            analytical.set_code_block(key.clone(), value.clone());
+                        },
+                        Object::Layout3D(layout) => {
+                            layout.set_code_block(key.clone(), value.clone());
+                        },
                         Object::Element2D(element) => {
                             element.set_code_block(key.clone(), value.clone());
                         },
                         _ => {}
                     }
-
                 } else {
                     let code = format!("let {} = {}", key, value);
-                    match &mut object {
+                    match object {
+                        Object::AnalyticalObject(analytical) => {
+                            analytical.execute(code);
+                            analytical.update();
+                        },
+                        Object::Layout3D(layout) => {
+                            layout.execute(code);
+                        },
                         Object::Element2D(element) => {
                             element.execute(code);
-                            //analytical.update();
                         },
                         _ => {}
                     }
                 }
 
                 println!("{:?}, {:?}", key, value);
-                //self.advance();
                 self.consume(TokenType::Greater, "Expected '>' after object properties.");
 
-                if self.parser.current.kind != TokenType::Less {
+                if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
                     break;
                 } else {
                     self.advance();
                 }
             }
-        }
-        //self.consume(TokenType::Greater, "Expected '>' after object properties.");
-
-        match &mut object {
-            Object::Element2D(texture) => {
-                //texture.alloc();
-            },
-            _ => {}
-        }
-
-        if is_root {
-            let mut node = Node::new();
-            node.object = object;
-            ctx.nodes.push(node);
         } else {
-            ctx.textures.push(object);
+            self.advance();
         }
     }
 

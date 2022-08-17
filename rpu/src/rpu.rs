@@ -6,6 +6,8 @@ pub mod analytical;
 pub mod compiler;
 pub mod hit;
 pub mod element2d;
+pub mod layout3d;
+pub mod sdf3d;
 
 use crate::prelude::*;
 

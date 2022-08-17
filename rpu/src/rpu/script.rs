@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use crate::prelude::*;
-
 pub struct ScriptEngine<'a> {
         engine              : Engine,
         scope               : Scope<'a>,

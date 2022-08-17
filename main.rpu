@@ -2,12 +2,9 @@
 
 Texture<>
 
-Cube<rotation: F3(0.0, 0.0, 45.0)>
-    <position: F3(-1.0, 0.0, 0.0)>
+Sphere'a<rotation: F3(0.0, 0.0, 0.0)>
+    <position: F3(0.0, 0.0, 0.0)>
     <onUpdate: rotation.y += 1.0>
 
-Sphere<>
-
-Cube<rotation: F3(0.0, 0.0, 45.0)>
-    <position: F3(1.0, 0.0, 0.0)>
-    <onUpdate: rotation.y += 1.0>
+//Grid2D<>
+//: aaa
