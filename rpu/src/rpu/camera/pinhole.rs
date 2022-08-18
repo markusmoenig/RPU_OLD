@@ -11,7 +11,7 @@ impl Camera3D for Pinhole {
 
     fn new() -> Self {
 
-        let origin = Vector3::new(0.0, 0.0, 5.0);
+        let origin = Vector3::new(0.0, 0.0, 10.0);
         let center = Vector3::new(0.0, 0.0, 0.0);
 
         Self {
@@ -32,5 +32,3 @@ impl Camera3D for Pinhole {
     }
 }
 
-//unsafe impl Send for Pinhole where Pinhole: Send {}
-//unsafe impl Sync for Pinhole where Pinhole: Sync {}

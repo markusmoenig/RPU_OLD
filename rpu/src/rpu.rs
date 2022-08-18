@@ -8,6 +8,7 @@ pub mod hit;
 pub mod element2d;
 pub mod layout3d;
 pub mod sdf3d;
+pub mod renderer;
 
 use crate::prelude::*;
 
@@ -15,7 +16,7 @@ pub struct RPU {
 
     context             : Option<Context>,
 
-    color               : ByteBuffer,
+    color               : ColorBuffer<F>,
     depth               : Buffer<f32>,
 
     camera              : Box<dyn Camera3D>,
@@ -29,7 +30,7 @@ impl RPU {
 
             context     : None,
 
-            color       : ByteBuffer::new(width, height, 0),
+            color       : ColorBuffer::new(width, height, 0.0),
             depth       : Buffer::new(width, height, -1.0),
 
             camera      : Box::new(Pinhole::new()),
@@ -54,15 +55,28 @@ impl RPU {
             context.render_distributed(&mut &self.camera, &mut self.color, &mut self.depth);
         }
 
-        self.copy_slice(frame, &self.color.pixels[..], &rect, self.color.size[0] as usize * 4);
+        self.copy_slice_float_to_u8(frame, &self.color.pixels[..], &rect, self.color.size[0] as usize * 4);
     }
 
     /// Copies rect from the source frame into the dest frame
-    fn copy_slice(&self, dest: &mut [u8], source: &[u8], rect: &(usize, usize, usize, usize), dest_stride: usize) {
+    fn _copy_slice(&self, dest: &mut [u8], source: &[u8], rect: &(usize, usize, usize, usize), dest_stride: usize) {
         for y in 0..rect.3 {
             let d = rect.0 * 4 + (y + rect.1) * dest_stride;
             let s = y * rect.2 * 4;
             dest[d..d + rect.2 * 4].copy_from_slice(&source[s..s + rect.2 * 4]);
         }
     }
+
+    /// Copies rect from the source float frame into the dest frame
+    fn copy_slice_float_to_u8(&self, dest: &mut [u8], source: &[F], rect: &(usize, usize, usize, usize), dest_stride: usize) {
+        for y in 0..rect.3 {
+            for x in 0..rect.2 {
+                let d = (rect.0 + x) * 4 + (y + rect.1) * dest_stride;
+                let s = x * 4 + y * rect.2 * 4;
+                let c = [(source[s] * 255.0) as u8, (source[s+1] * 255.0) as u8,  (source[s+2] * 255.0) as u8,  (source[s+3] * 255.0) as u8];
+                dest[d..d + 4].copy_from_slice(&c);
+            }
+        }
+    }
+
 }

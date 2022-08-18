@@ -3,8 +3,9 @@
 Texture<>
 
 Sphere'a<rotation: F3(0.0, 0.0, 0.0)>
-    <position: F3(0.0, 0.0, 0.0)>
-    <onUpdate: rotation.y += 1.0>
+    //<position: F3(0.0, 0.0, 0.0)>
+    //<onUpdate: rotation.y += 1.0>
 
-//Grid2D<>
-//: aaa
+Grid3D<>
+: aaa
+: aa

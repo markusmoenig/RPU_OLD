@@ -7,8 +7,6 @@ use crate::prelude::*;
 
 use self::scanner::TokenType;
 
-use super::{element2d::texture::Texture, layout3d::grid2d::Grid2D};
-
 #[derive(Clone, Debug)]
 pub enum ErrorType {
     Syntax,
@@ -94,7 +92,7 @@ impl Compiler {
         while !self.matches(TokenType::Eof) {
 
             let analytical = ["cube", "sphere"];
-            let layouts = ["grid2d"];
+            let layouts = ["grid3d"];
             let mut consumed = false;
 
             if self.indent() == 0 {
@@ -133,9 +131,9 @@ impl Compiler {
         let mut object : Option<Object> = None;
         let mut symbol : Option<char> = None;
 
-        if self.parser.current.lexeme == "Cube" {
-            object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
-        }
+        // if self.parser.current.lexeme == "Cube" {
+        //     object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
+        // }
         if self.parser.current.lexeme == "Sphere" {
             object = Some(Object::SDF3D(Box::new(SDF3DSphere::new())));
         }
@@ -172,8 +170,11 @@ impl Compiler {
         let mut object : Option<Object> = None;
         let mut symbol : Option<char> = None;
 
-        if self.parser.current.lexeme.to_lowercase() == "grid2d" {
-            object = Some(Object::Layout3D(Box::new(Grid2D::new())));
+        // if self.parser.current.lexeme.to_lowercase() == "grid2d" {
+        //     object = Some(Object::Layout3D(Box::new(Grid2D::new())));
+        // } else
+        if self.parser.current.lexeme.to_lowercase() == "grid3d" {
+            object = Some(Object::Layout3D(Box::new(Grid3D::new())));
         }
 
         self.advance();
@@ -192,7 +193,7 @@ impl Compiler {
         if let Some(object) = &mut object {
             self.parse_object_properties(object);
 
-            let mut map : HashMap<(usize, usize), usize> = HashMap::new();
+            let mut map : HashMap<(isize, isize, isize), usize> = HashMap::new();
 
             let mut x = 0;
             let mut y = 0;
@@ -216,7 +217,7 @@ impl Compiler {
 
                 for c in symbols {
                     if let Some(index) = ctx.symbols_node_index.get(&c) {
-                        map.insert((x, y), *index);
+                        map.insert((x, y, 0), *index);
                         x+= 1;
                     } else {
                         self.error_at_current(format!("Undefined instance symbol '{}'.", c).as_str());
@@ -226,7 +227,7 @@ impl Compiler {
                 self.advance();
             }
             match object {
-                Object::Layout3D(layout) => layout.set_map_element(map),
+                Object::Layout3D(layout) => layout.set_map3d(map),
                 _ => {}
             }
         }

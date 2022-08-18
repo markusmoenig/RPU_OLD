@@ -11,7 +11,7 @@ impl SDF3D for SDF3DSphere<'_> {
 
         let mut engine = ScriptEngine::new();
         engine.set_vector3("position", Vector3::new(0.0, 0.0, 0.0));
-        engine.set_float("radius", 1.0);
+        engine.set_float("radius", 0.5);
 
         Self {
             engine,
@@ -26,6 +26,7 @@ impl SDF3D for SDF3DSphere<'_> {
         self.engine.set_code_block(name, code);
     }
 
+    #[inline(always)]
     fn get_distance(&self, x: &Vector3<F>, instance: &Vector3<F>) -> F {
 
         let position = self.engine.get_vector3("position").unwrap();

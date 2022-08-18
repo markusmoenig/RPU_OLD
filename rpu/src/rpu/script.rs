@@ -39,7 +39,7 @@ impl ScriptEngine<'_> {
     }
 
     pub fn execute(&mut self, code: String) {
-        let rc = self.engine.eval_with_scope::<rhai::Dynamic>(&mut self.scope, code.as_str());
+        let _rc = self.engine.eval_with_scope::<rhai::Dynamic>(&mut self.scope, code.as_str());
         //println!("{:?}", rc);
     }
 

@@ -44,13 +44,13 @@ impl<T: Clone> Buffer<T> {
 }
 
 #[derive(Clone)]
-pub struct ByteBuffer {
-    pub pixels          : Vec<u8>,
+pub struct ColorBuffer<T> {
+    pub pixels          : Vec<T>,
     pub size            : [usize; 2],
 }
 
-impl ByteBuffer {
-    pub fn new (width: usize, height: usize, fill: u8) -> Self {
+impl<T: Clone> ColorBuffer<T> {
+    pub fn new (width: usize, height: usize, fill: T) -> Self {
 
         Self {
             pixels      : vec![fill; width * height * 4],

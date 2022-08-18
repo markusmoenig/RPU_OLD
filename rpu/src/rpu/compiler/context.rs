@@ -8,6 +8,8 @@ pub struct Context {
     pub nodes                   : Vec<Node>,
     pub layouts                 : Vec<Object>,
     pub symbols_node_index      : HashMap<char, usize>,
+
+    pub renderer                : Box<dyn Renderer>,
 }
 
 impl Context {
@@ -18,6 +20,8 @@ impl Context {
             nodes               : vec![],
             layouts             : vec![],
             symbols_node_index  : HashMap::new(),
+
+            renderer            : Box::new(Textured::new()),
         }
     }
 
@@ -33,7 +37,7 @@ impl Context {
         }
     }
 
-    pub fn render_distributed(&mut self, camera: &Box<dyn Camera3D>, color: &mut ByteBuffer, _depth: &mut Buffer<f32>) {
+    pub fn render_distributed(&mut self, camera: &Box<dyn Camera3D>, color: &mut ColorBuffer<F>, _depth: &mut Buffer<f32>) {
         let [width, height] = color.size;
 
         self.update();
@@ -75,7 +79,7 @@ impl Context {
                         }
                     }
                     if hit == false {
-                        let c = [0, 0, 0, 255];
+                        let c = [0.0, 0.0, 0.0, 1.0];
                         pixel.copy_from_slice(&c);
                     }
                 }
@@ -107,7 +111,7 @@ impl Context {
 
     #[inline(always)]
     fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], size: &[usize;2], object: &Object) -> Option<Color> {
-        let mut c = [0, 0, 0, 255];
+        let mut c = [0.0, 0.0, 0.0, 1.0];
 
         match object {
             Object::Empty => {},
@@ -131,19 +135,28 @@ impl Context {
                 let [ro, rd] = ray;
                 let mut t = 0.01;
                 let translate = Vector3::new(0.0, 0.0, 0.0);
-                for _i in 0..14 {
+                for _i in 0..12 {
                     let p = ro + rd * t;
                     let d = object.get_distance(&p, &translate);
                     if d < 0.001 {
-                        c[0] = 255;
+                        c[0] = 1.0;
                         return Some(c);
                     }
                     t += d;
-                }
-                return None;
-                /*
-                if let Some(hit) = object.get_distance_normal_uv_face(&ray) {
 
+                    if t > 5.0 {
+                        return None;
+                    }
+                }
+            },
+            /*
+            Object::Layout3D(_layout) => {
+                self.renderer.render(ray, object, &self);
+                /*
+                if let Some(hit) = layout.traverse3d(&ray, &self) {
+
+                    c[0] = 255;
+                    /*
                     let tex_index= 0_usize;
                     match &self.textures[tex_index] {
                         Object::Element2D(el) => {
@@ -151,26 +164,11 @@ impl Context {
                             c = el.get_color_at(&[uv.x, -uv.y]);
                         },
                         _ => {},
-                    }
+                    }*/
                 } else {
                     return None;
                 }*/
-            },
-            Object::Layout3D(layout) => {
-                if let Some(hit) = layout.traverse(&ray, &self) {
-
-                    let tex_index= 0_usize;
-                    match &self.textures[tex_index] {
-                        Object::Element2D(el) => {
-                            let uv = hit.uv;
-                            c = el.get_color_at(&[uv.x, -uv.y]);
-                        },
-                        _ => {},
-                    }
-                } else {
-                    return None;
-                }
-            },
+            },*/
             Object::Element2D(element) => {
                 let [width, height]= size;
                 let [x, y]= p;
@@ -179,7 +177,9 @@ impl Context {
                 let yy = (*y as F / *height as F) - 0.5;
                 c = element.get_color_at(&[xx, -yy]);
             },
-            _ => {},
+            _ => {
+                c = self.renderer.render(ray, object, &self);
+            }
         }
         Some(c)
     }

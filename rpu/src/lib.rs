@@ -5,14 +5,14 @@ pub use crate::rpu::buffer::Buffer as Buffer;
 
 pub type I = i32;
 pub type F = f32;
-pub type Color = [u8; 4];
+pub type Color = [F; 4];
 
 pub mod prelude {
     pub use nalgebra::*;
     pub use crate::rpu::RPU;
 
     pub use crate::rpu::buffer::Buffer;
-    pub use crate::rpu::buffer::ByteBuffer;
+    pub use crate::rpu::buffer::ColorBuffer;
 
     pub use crate::rpu::script::ScriptEngine;
     pub use crate::rpu::element2d::Element2D;
@@ -24,10 +24,11 @@ pub mod prelude {
     pub use crate::rpu::sdf3d::sphere::SDF3DSphere;
 
     pub use crate::rpu::analytical::Analytical;
-    pub use crate::rpu::analytical::sphere::AnalyticalSphere;
-    pub use crate::rpu::analytical::cube::AnalyticalCube;
+    // pub use crate::rpu::analytical::sphere::AnalyticalSphere;
+    // pub use crate::rpu::analytical::cube::AnalyticalCube;
 
     pub use crate::rpu::layout3d::Layout3D;
+    pub use crate::rpu::layout3d::grid3d::Grid3D;
 
     pub use crate::rpu::compiler::Compiler;
     pub use crate::rpu::compiler::Error;
@@ -37,6 +38,11 @@ pub mod prelude {
     pub use crate::rpu::compiler::node::Node;
     pub use crate::rpu::compiler::object::Object;
     pub use crate::rpu::compiler::context::*;
+
+    pub use crate::rpu::renderer::Renderer;
+    pub use crate::rpu::renderer::textured::Textured;
+
+    pub use crate::rpu::element2d::texture::Texture;
 
     pub use crate::rpu::hit::*;
 

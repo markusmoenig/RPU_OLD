@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct Texture<'a> {
-    color               : Option<ByteBuffer>,
+    color               : Option<ColorBuffer<F>>,
 
     engine              : ScriptEngine<'a>,
 }
@@ -24,11 +24,11 @@ impl Element2D for Texture<'_> {
         let width = self.engine.get_int("width").unwrap();
         let height = self.engine.get_int("height").unwrap();
 
-        self.color = Some(ByteBuffer::new(width as usize, height as usize, 255));
+        self.color = Some(ColorBuffer::new(width as usize, height as usize, 1.0));
     }
 
     fn get_color_at(&self, p: &[F; 2]) -> Color {
-        let mut c = [255, 0, 0, 255];
+        let mut c = [1.0, 0.0, 0.0, 1.0];
 
         //let [width, height] = self.get_size();
         let [x, y] = p;
@@ -36,7 +36,7 @@ impl Element2D for Texture<'_> {
         let t = SMatrix::<F, 2, 1>::new(*x, *y);
 
         if t.norm() - 0.5 <= 0.0 {
-            c[1] = 255;
+            c[1] = 1.0;
 
             // let xx = (*x + 1.0) / 2.0;
             // let yy = (*y + 1.0) / 2.0;
