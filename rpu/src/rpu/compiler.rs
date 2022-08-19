@@ -193,10 +193,10 @@ impl Compiler {
         if let Some(object) = &mut object {
             self.parse_object_properties(object);
 
-            let mut map : HashMap<(isize, isize, isize), usize> = HashMap::new();
+            let mut map : HashMap<(i32, i32, i32), usize> = HashMap::new();
 
             let mut x = 0;
-            let mut y = 0;
+            let mut y = -1;
 
             let mut first = true;
 
@@ -207,6 +207,7 @@ impl Compiler {
                         first = false;
                     } else {
                         y += 1;
+                        x = 0;
                     }
                     self.advance();
                 } else {

@@ -3,6 +3,8 @@ pub mod rpu;
 pub use crate::rpu::RPU as RPU;
 pub use crate::rpu::buffer::Buffer as Buffer;
 
+extern crate nalgebra_glm as glm;
+
 pub type I = i32;
 pub type F = f32;
 pub type Color = [F; 4];

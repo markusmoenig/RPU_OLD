@@ -6,6 +6,6 @@ Sphere'a<rotation: F3(0.0, 0.0, 0.0)>
     //<position: F3(0.0, 0.0, 0.0)>
     //<onUpdate: rotation.y += 1.0>
 
-Grid3D<>
-: aaa
-: aa
+Grid3D<voxels: true>
+: a
+

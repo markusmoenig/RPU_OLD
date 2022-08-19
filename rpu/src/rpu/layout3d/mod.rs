@@ -4,11 +4,12 @@ pub mod grid3d;
 
 use crate::prelude::*;
 
+#[allow(unused)]
 pub trait Layout3D : Sync + Send {
     fn new() -> Self where Self: Sized;
 
-    fn set_map2d(&mut self, map: HashMap<(isize, isize), usize>) {}
-    fn set_map3d(&mut self, map: HashMap<(isize, isize, isize), usize>) {}
+    fn set_map2d(&mut self, map: HashMap<(i32, i32), usize>) {}
+    fn set_map3d(&mut self, map: HashMap<(i32, i32, i32), usize>) {}
 
     fn traverse3d(&self, ray: &Ray, get_normal: bool, ctx: &Context) -> Option<HitRecord>;
 

@@ -9,5 +9,6 @@ repository = "https://github.com/markusmoenig/RPU.git"
 
 [dependencies]
 nalgebra = "0.31.0"
+nalgebra-glm = "0.17.0"
 rayon = "1.5.3"
 rhai = { version = "*", features = ["sync", "f32_float", "only_i32"] }
