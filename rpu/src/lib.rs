@@ -24,6 +24,7 @@ pub mod prelude {
 
     pub use crate::rpu::sdf3d::SDF3D;
     pub use crate::rpu::sdf3d::sphere::SDF3DSphere;
+    pub use crate::rpu::sdf3d::cube::SDF3DCube;
 
     pub use crate::rpu::analytical::Analytical;
     // pub use crate::rpu::analytical::sphere::AnalyticalSphere;

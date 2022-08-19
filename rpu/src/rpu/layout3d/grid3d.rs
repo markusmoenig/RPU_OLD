@@ -22,8 +22,20 @@ impl Layout3D for Grid3D<'_> {
         self.map = map;
     }
 
-
     fn traverse3d(&self, ray: &Ray, get_normal: bool, ctx: &Context) -> Option<HitRecord> {
+
+        fn get_uv(hp: &Vector3<F>, mask: &glm::BVec3) -> Vector2<F> {
+            let uv : Vector2<F>;
+            if mask.x {
+                uv = Vector2::new( (hp.z.abs()).fract() - 0.5, (hp.y.abs()).fract() - 0.5);
+            } else
+            if mask.y {
+                uv = Vector2::new( (hp.x.abs()).fract() - 0.5, (hp.z.abs()).fract() - 0.5);
+            } else {
+                uv = Vector2::new( (hp.x.abs()).fract() - 0.5, (hp.y.abs()).fract() - 0.5);
+            }
+            uv
+        }
 
         // Based on https://www.shadertoy.com/view/4dX3zl
 
@@ -61,11 +73,11 @@ impl Layout3D for Grid3D<'_> {
                 let dz = mask.z as i32 as f32 * (side_dist.z - delta_dist.z);
                 let dist = glm::length(&glm::Vec3::new(dx, dy, dz));
 
-                let mut t = dist;
                 match &ctx.nodes[*index].object {
 
                     Object::SDF3D(object) => {
                         let hp = Vector3::new(map_pos.x as F + 0.5, map_pos.y as F + 0.5, map_pos.z as F + 0.5);
+                        let mut t = dist;
                         for _i in 0..24 {
                             let p = ro + rd * t;
                             let d = object.get_distance(&p, &hp);
@@ -74,10 +86,10 @@ impl Layout3D for Grid3D<'_> {
                                 return Some( HitRecord {
                                     distance        : dist,
                                     node            : *index,
-                                    hit_point       : hp,
+                                    hit_point       : p,
                                     mask            : mask,
                                     normal          : if get_normal { object.get_normal(&p, &hp) } else { Vector3::new(0.0, 0.0, 0.0) },
-                                    uv              : Vector2::new(0.0, 0.0),
+                                    uv              : get_uv(&p, &mask),
                                     face            : 0
                                 });
                             }
@@ -86,6 +98,20 @@ impl Layout3D for Grid3D<'_> {
                             }
                             t += d;
                         }
+                    },
+                    Object::Voxel => {
+
+                        let hp = ro + rd * dist;
+
+                        return Some( HitRecord {
+                            distance        : dist,
+                            node            : *index,
+                            hit_point       : hp,
+                            mask            : mask,
+                            normal          : Vector3::new(0.0, 0.0, 0.0),
+                            uv              : get_uv(&hp, &mask),
+                            face            : 0
+                        });
                     }
                     _ => {},
                 }

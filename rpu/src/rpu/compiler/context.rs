@@ -10,6 +10,7 @@ pub struct Context {
     pub symbols_node_index      : HashMap<char, usize>,
 
     pub renderer                : Box<dyn Renderer>,
+    pub camera                  : Box<dyn Camera3D>,
 }
 
 impl Context {
@@ -22,13 +23,14 @@ impl Context {
             symbols_node_index  : HashMap::new(),
 
             renderer            : Box::new(Textured::new()),
+            camera              : Box::new(Pinhole::new()),
         }
     }
 
     pub fn update(&mut self) {
+        self.camera.update();
         for o in &mut self.nodes {
             match &mut o.object {
-                Object::Empty => {},
                 Object::AnalyticalObject(object) => {
                     object.update();
                 },
@@ -37,7 +39,7 @@ impl Context {
         }
     }
 
-    pub fn render_distributed(&mut self, camera: &Box<dyn Camera3D>, color: &mut ColorBuffer<F>, _depth: &mut Buffer<f32>) {
+    pub fn render_distributed(&mut self, color: &mut ColorBuffer<F>) {
         let [width, height] = color.size;
 
         self.update();
@@ -60,9 +62,9 @@ impl Context {
                     let xx = x as F / width as F;
                     let yy = y as F / height as F;
 
-                    let coord = Vector2::new((xx - 0.5) * ratio, yy - 0.5);
+                    let coord = Vector2::new((xx - 0.5) * ratio, (1.0 - yy) - 0.5);
 
-                    let ray = camera.gen_ray(coord);
+                    let ray = self.camera.gen_ray(coord);
                     let mut hit = false;
                     if let Some(layout) = self.layouts.last() {
                         if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &layout) {
@@ -114,7 +116,6 @@ impl Context {
         let mut c = [0.0, 0.0, 0.0, 1.0];
 
         match object {
-            Object::Empty => {},
             Object::AnalyticalObject(object) => {
                 if let Some(hit) = object.get_distance_normal_uv_face(&ray) {
 

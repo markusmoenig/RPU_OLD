@@ -22,9 +22,18 @@ impl Renderer for Textured<'_> {
                 Object::Layout3D(layout) => {
 
                     if let Some(hit) = layout.traverse3d(&ray,true, ctx) {
-                        c[0] = hit.normal.x;
-                        c[1] = hit.normal.y;
-                        c[2] = hit.normal.z;
+                        //c[0] = hit.uv.x;
+                        //c[1] = hit.uv.y;
+                        //c[2] = hit.normal.z;
+
+                        let tex_index= 0_usize;
+                        match &ctx.textures[tex_index] {
+                            Object::Element2D(el) => {
+                                let uv = hit.uv;
+                                c = el.get_color_at(&[uv.x, uv.y]);
+                            },
+                            _ => {},
+                        }
                     }
                 }
                 _ => {},

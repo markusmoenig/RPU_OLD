@@ -17,9 +17,6 @@ pub struct RPU {
     context             : Option<Context>,
 
     color               : ColorBuffer<F>,
-    depth               : Buffer<f32>,
-
-    camera              : Box<dyn Camera3D>,
 }
 
 impl RPU {
@@ -31,9 +28,6 @@ impl RPU {
             context     : None,
 
             color       : ColorBuffer::new(width, height, 0.0),
-            depth       : Buffer::new(width, height, -1.0),
-
-            camera      : Box::new(Pinhole::new()),
         }
     }
 
@@ -52,7 +46,7 @@ impl RPU {
     pub fn render(&mut self, frame: &mut [u8], rect: (usize, usize, usize, usize)) {
 
         if let Some(context) = &mut self.context {
-            context.render_distributed(&mut &self.camera, &mut self.color, &mut self.depth);
+            context.render_distributed(&mut self.color);
         }
 
         self.copy_slice_float_to_u8(frame, &self.color.pixels[..], &rect, self.color.size[0] as usize * 4);

@@ -91,7 +91,8 @@ impl Compiler {
 
         while !self.matches(TokenType::Eof) {
 
-            let analytical = ["cube", "sphere"];
+            let camera3d = ["pinhole"];
+            let objects3d = ["voxel", "sdfcube", "sdfsphere"];
             let layouts = ["grid3d"];
             let mut consumed = false;
 
@@ -100,7 +101,11 @@ impl Compiler {
                     let idl = self.parser.current.lexeme.to_lowercase();
                     let id = idl.as_str();
 
-                    if analytical.contains(&id){
+                    if camera3d.contains(&id){
+                        self.camera3d(ctx);
+                        consumed = true;
+                    } else
+                    if objects3d.contains(&id){
                         self.object3d(ctx);
                         consumed = true;
                     } else
@@ -134,7 +139,13 @@ impl Compiler {
         // if self.parser.current.lexeme == "Cube" {
         //     object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
         // }
-        if self.parser.current.lexeme == "Sphere" {
+        if self.parser.current.lexeme.to_lowercase() == "voxel" {
+            object = Some(Object::Voxel);
+        } else
+        if self.parser.current.lexeme.to_lowercase() == "sdfcube" {
+            object = Some(Object::SDF3D(Box::new(SDF3DCube::new())));
+        } else
+        if self.parser.current.lexeme.to_lowercase() == "sdfsphere" {
             object = Some(Object::SDF3D(Box::new(SDF3DSphere::new())));
         }
 
@@ -196,7 +207,7 @@ impl Compiler {
             let mut map : HashMap<(i32, i32, i32), usize> = HashMap::new();
 
             let mut x = 0;
-            let mut y = -1;
+            let mut y = 0;
 
             let mut first = true;
 
@@ -271,6 +282,52 @@ impl Compiler {
         }
     }
 
+    /// Reads a texture
+    fn camera3d(&mut self, ctx: &mut Context) {
+        let mut object = Box::new(Pinhole::new());
+
+        self.advance();
+
+        self.consume(TokenType::Less, "Expected '<' after object identifier.");
+        if self.parser.current.kind != TokenType::Greater {
+            loop {
+                let key = self.parser.current.lexeme.clone().to_lowercase();
+                self.consume(TokenType::Identifier, "Expected identifier after '<'.");
+                self.consume(TokenType::Colon, "Expected ':' after identifier.");
+
+                let mut value = "".to_string();
+
+                while /* !self.check(TokenType::Comma) &&*/ !self.check(TokenType::Greater) && !self.check(TokenType::Eof) {
+                    value += self.parser.current.lexeme.as_mut_str();
+                    self.advance();
+                }
+
+                let code_blocks = ["onupdate".to_string()];
+
+                if code_blocks.contains(&key) {
+                    object.set_code_block(key.clone(), value.clone());
+                } else {
+                    let code = format!("let {} = {}", key, value);
+                    object.execute(code);
+                }
+
+                println!("{:?}, {:?}", key, value);
+                self.consume(TokenType::Greater, "Expected '>' after object properties.");
+
+                if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
+                    break;
+                } else {
+                    self.advance();
+                }
+            }
+        } else {
+            self.advance();
+        }
+
+        ctx.camera = object;
+    }
+
+
     /// Parses the properties for the given object
     fn parse_object_properties(&mut self, object: &mut Object) {
 
@@ -300,6 +357,9 @@ impl Compiler {
                         Object::Element2D(element) => {
                             element.set_code_block(key.clone(), value.clone());
                         },
+                        Object::Camera3D(camera) => {
+                            camera.set_code_block(key.clone(), value.clone());
+                        },
                         _ => {}
                     }
                 } else {
@@ -314,6 +374,9 @@ impl Compiler {
                         },
                         Object::Element2D(element) => {
                             element.execute(code);
+                        },
+                        Object::Camera3D(camera) => {
+                            camera.execute(code);
                         },
                         _ => {}
                     }

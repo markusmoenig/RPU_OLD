@@ -1,34 +1,52 @@
 
 use crate::prelude::*;
 
-pub struct Pinhole {
+pub struct Pinhole<'a> {
 
-    origin          :  Vector3<F>,
-    center          :  Vector3<F>
+    engine              : ScriptEngine<'a>,
 }
 
-impl Camera3D for Pinhole {
+impl Camera3D for Pinhole<'_> {
 
     fn new() -> Self {
 
-        let origin = Vector3::new(0.0, 0.0, 6.0);
-        let center = Vector3::new(0.0, 0.0, 0.0);
+        let mut engine = ScriptEngine::new();
+        engine.set_vector3("origin", Vector3::new(0.0, 2.0, 5.0));
+        engine.set_vector3("center", Vector3::new(0.0, 0.0, 0.0));
 
         Self {
-            origin,
-            center,
+            engine,
         }
+    }
+
+    fn update(&mut self) {
+        self.engine.execute_block("onupdate".to_string());
+    }
+
+
+    fn execute(&mut self, code: String) {
+        self.engine.execute(code);
+    }
+
+    fn set_code_block(&mut self, name: String, code: String) {
+        self.engine.set_code_block(name, code);
     }
 
     #[inline(always)]
     fn gen_ray(&self, p: Vector2<F>) -> [Vector3<F>; 2] {
-        let ww = (self.center - self.origin).normalize();
+
+        let origin = self.engine.get_vector3("origin").unwrap();
+        let center = self.engine.get_vector3("center").unwrap();
+
+
+        let ww = (center - origin).normalize();
         let uu = ww.cross(&Vector3::new(0.0, 1.0, 0.0)).normalize();
         let vv = uu.cross(&ww).normalize();
 
         let rd = (p.x * uu + p.y * vv + 2.0 * ww).normalize();
 
-        [self.origin, rd]
+        [origin, rd]
     }
+
 }
 
