@@ -63,7 +63,7 @@ impl Layout3D for Grid3D<'_> {
 
         let mut mask = glm::BVec3::new(false, false, false);
 
-        for _i in 0..10 {
+        for _i in 0..14 {
 
             if let Some(index) = self.map.get(&(map_pos.x, map_pos.y, map_pos.z)) {
 
@@ -93,7 +93,7 @@ impl Layout3D for Grid3D<'_> {
                                     face            : 0
                                 });
                             }
-                            if t > t + 1.0 {
+                            if t > dist + 1.73205 {
                                 break;
                             }
                             t += d;

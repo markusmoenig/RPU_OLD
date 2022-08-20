@@ -126,16 +126,16 @@ impl<'sourcecode> Scanner {
         }
     }
 
-    pub fn scan_token(&mut self) -> Token {
-        self.skip_whitespace();
+    pub fn scan_token(&mut self, allow_whitespace: bool) -> Token {
+        self.skip_whitespace(allow_whitespace);
         self.start = self.current;
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
         }
 
         match self.advance() {
-            //b' ' => self.make_token(TokenType::Space),
-            //b'\n' => self.make_token(TokenType::LineFeed),
+            b' ' if allow_whitespace => self.make_token(TokenType::Space),
+            b'\n' if allow_whitespace => self.make_token(TokenType::LineFeed),
             b'-' if self.matches(b'-') => self.make_token(TokenType::CodeBlock),
             b'(' => self.make_token(TokenType::LeftParen),
             b')' => self.make_token(TokenType::RightParen),
@@ -224,11 +224,11 @@ impl<'sourcecode> Scanner {
         }
     }
 
-    fn skip_whitespace(&mut self) {
+    fn skip_whitespace(&mut self, allow_whitespace: bool) {
         let mut after_lf = false;
         while !self.is_at_end() {
             match self.peek() {
-                b' ' => {
+                b' ' if allow_whitespace == false => {
                     if after_lf {
                         self.indent += 1;
                     }

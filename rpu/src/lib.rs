@@ -16,7 +16,8 @@ pub mod prelude {
     pub use crate::rpu::buffer::Buffer;
     pub use crate::rpu::buffer::ColorBuffer;
 
-    pub use crate::rpu::script::ScriptEngine;
+    pub use crate::rpu::script::*;
+    pub use crate::rpu::script::engine::ScriptEngine;
     pub use crate::rpu::element2d::Element2D;
 
     pub use crate::rpu::camera::*;

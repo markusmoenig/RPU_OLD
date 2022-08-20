@@ -3,6 +3,7 @@ use crate::prelude::*;
 pub struct Node {
     pub childs              : Vec<Node>,
     pub object              : Object,
+    pub texture             : Option<usize>
 }
 
 impl Node {
@@ -10,7 +11,8 @@ impl Node {
     pub fn new() -> Self {
         Self {
             childs          : vec![],
-            object          : Object::Empty
+            object          : Object::Empty,
+            texture         : None,
         }
     }
 }

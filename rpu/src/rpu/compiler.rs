@@ -166,8 +166,23 @@ impl Compiler {
             self.parse_object_properties(object);
         }
 
+        // Get the texture name if any
+        let mut texture : Option<usize> = None;
+
+        if let Some(object) = &object {
+            match object {
+                Object::SDF3D(sdf) => {
+                    if let Some(name) = sdf.get_engine().get_string("texture") {
+                        texture = self.get_texture_index(name, ctx);
+                    }
+                },
+                _ => {}
+            }
+        }
+
         let mut node = Node::new();
         node.object = object.unwrap();
+        node.texture = texture;
 
         if let Some(symbol) = symbol {
             ctx.symbols_node_index.insert(symbol, ctx.nodes.len());
@@ -208,36 +223,55 @@ impl Compiler {
 
             let mut x = 0;
             let mut y = 0;
+            let mut z = 0;
 
             let mut first = true;
 
             loop {
+                self.debug_current();
                 if self.check(TokenType::Colon) {
-                    // Next line
-                    if first == true {
-                        first = false;
-                    } else {
-                        y += 1;
-                        x = 0;
+
+                    while self.check(TokenType::Colon) {
+                        // Next line
+                        if first == true {
+                            first = false;
+                        } else {
+                            z += 1;
+                            x = 0;
+                        }
+                        self.advance_with_whitespace();
                     }
-                    self.advance();
-                } else {
+                    //self.consume_with_whitespace(TokenType::Space, "Expect ' ' after colon.");
+                } else
+                if self.check(TokenType::Space) {
+                    x += 1;
+                    self.advance_with_whitespace();
+                } else
+                if self.check(TokenType::Identifier) != true {
                     break;
                 }
 
                 let symbols = self.parser.current.lexeme.chars();
+                println!("{:?}", symbols);
 
                 for c in symbols {
+                    if c == ' ' {
+                        x += 1;
+                    } else
                     if let Some(index) = ctx.symbols_node_index.get(&c) {
-                        map.insert((x, y, 0), *index);
+                        map.insert((x, y, z), *index);
                         x+= 1;
                     } else {
                         self.error_at_current(format!("Undefined instance symbol '{}'.", c).as_str());
                         break;
                     }
                 }
-                self.advance();
+
+                self.advance_with_whitespace();
             }
+
+            //println!("{:?}", map);
+
             match object {
                 Object::Layout3D(layout) => layout.set_map3d(map),
                 _ => {}
@@ -282,7 +316,7 @@ impl Compiler {
         }
     }
 
-    /// Reads a texture
+    /// Reads a camera
     fn camera3d(&mut self, ctx: &mut Context) {
         let mut object = Box::new(Pinhole::new());
 
@@ -327,6 +361,23 @@ impl Compiler {
         ctx.camera = object;
     }
 
+    /// Returns the index of the texture with the given name
+    fn get_texture_index(&self, name: String, ctx: &mut Context) -> Option<usize> {
+        for (index, object) in ctx.textures.iter().enumerate() {
+            match object {
+                Object::Element2D(el) => {
+                    //texture.alloc();
+                    if let Some(rc) = el.get_engine().get_string("name") {
+                        if rc == name {
+                            return Some(index)
+                        }
+                    }
+                },
+                _ => {}
+            }
+        }
+        None
+    }
 
     /// Parses the properties for the given object
     fn parse_object_properties(&mut self, object: &mut Object) {
@@ -351,6 +402,9 @@ impl Compiler {
                         Object::AnalyticalObject(analytical) => {
                             analytical.set_code_block(key.clone(), value.clone());
                         },
+                        Object::SDF3D(sdf) => {
+                            sdf.set_code_block(key.clone(), value.clone());
+                        },
                         Object::Layout3D(layout) => {
                             layout.set_code_block(key.clone(), value.clone());
                         },
@@ -368,6 +422,9 @@ impl Compiler {
                         Object::AnalyticalObject(analytical) => {
                             analytical.execute(code);
                             analytical.update();
+                        },
+                        Object::SDF3D(sdf) => {
+                            sdf.execute(code);
                         },
                         Object::Layout3D(layout) => {
                             layout.execute(code);
@@ -401,7 +458,20 @@ impl Compiler {
         self.parser.previous = self.parser.current.clone();
 
         loop {
-            self.parser.current = self.scanner.scan_token();
+            self.parser.current = self.scanner.scan_token(false);
+
+            if self.parser.current.kind != TokenType::Error {
+                break;
+            }
+        }
+    }
+
+    /// Advance one token and allow whitespace
+    fn advance_with_whitespace(&mut self) {
+        self.parser.previous = self.parser.current.clone();
+
+        loop {
+            self.parser.current = self.scanner.scan_token(true);
 
             if self.parser.current.kind != TokenType::Error {
                 break;
@@ -418,6 +488,15 @@ impl Compiler {
     fn consume(&mut self, kind: TokenType, message: &str) {
         if self.parser.current.kind == kind {
             self.advance();
+            return;
+        }
+        self.error_at_current(message);
+    }
+
+    /// Consume the current token if the type matches
+    fn _consume_with_whitespace(&mut self, kind: TokenType, message: &str) {
+        if self.parser.current.kind == kind {
+            self.advance_with_whitespace();
             return;
         }
         self.error_at_current(message);

@@ -56,6 +56,17 @@ impl Element2D for Texture<'_> {
         }
         [0, 0]
     }
+}
+
+impl Script for Texture<'_> {
+
+    fn get_scope<'a>(&mut self) -> &'a Scope {
+        self.engine.get_scope()
+    }
+
+    fn get_engine<'a>(&self) -> &'a ScriptEngine {
+        &self.engine
+    }
 
     fn execute(&mut self, code: String) {
         self.engine.execute(code);

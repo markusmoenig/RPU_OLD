@@ -1,13 +1,10 @@
-use std::collections::HashMap;
-
 use crate::prelude::*;
 pub struct ScriptEngine<'a> {
         engine              : Engine,
         scope               : Scope<'a>,
 
         code_blocks         : HashMap<String, String>
-    }
-
+}
 
 impl ScriptEngine<'_> {
 
@@ -90,55 +87,11 @@ impl ScriptEngine<'_> {
     pub fn set_int(&mut self, name: &str, v: I) {
         self.scope.set_value(name, v);
     }
-}
 
-// F3
-#[derive(PartialEq, Debug, Clone)]
-pub struct F3 {
-    pub value               : Vector3<F>
-}
-
-impl F3 {
-
-    pub fn new(v: Vector3<F>) -> Self {
-        Self {
-            value           : v,
+    pub fn get_string(&self, name: &str) -> Option<String> {
+        if let Some(v) = self.scope.get_value::<String>(name) {
+            return Some(v);
         }
-    }
-
-    pub fn new_1(x: F) -> Self {
-        Self {
-            value           : Vector3::new(x, x, x)
-        }
-    }
-
-    pub fn new_3(x: F, y: F, z: F) -> Self {
-        Self {
-            value           : Vector3::new(x, y, z),
-        }
-    }
-
-    fn get_x(&mut self) -> F {
-        self.value.x
-    }
-
-    fn set_x(&mut self, new_val: F) {
-        self.value.x = new_val;
-    }
-
-    fn get_y(&mut self) -> F {
-        self.value.y
-    }
-
-    fn set_y(&mut self, new_val: F) {
-        self.value.y = new_val;
-    }
-
-    fn get_z(&mut self) -> F {
-        self.value.z
-    }
-
-    fn set_z(&mut self, new_val: F) {
-        self.value.z = new_val;
+        None
     }
 }

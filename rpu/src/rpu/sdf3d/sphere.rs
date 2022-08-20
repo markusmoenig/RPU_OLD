@@ -18,14 +18,6 @@ impl SDF3D for SDF3DSphere<'_> {
         }
     }
 
-    fn execute(&mut self, code: String) {
-        self.engine.execute(code);
-    }
-
-    fn set_code_block(&mut self, name: String, code: String) {
-        self.engine.set_code_block(name, code);
-    }
-
     #[inline(always)]
     fn get_distance(&self, x: &Vector3<F>, instance: &Vector3<F>) -> F {
 
@@ -35,5 +27,24 @@ impl SDF3D for SDF3DSphere<'_> {
         let p = (x - position - instance).norm() - radius;
 
         return p;
+    }
+}
+
+impl Script for SDF3DSphere<'_> {
+
+    fn get_scope<'a>(&mut self) -> &'a Scope {
+        self.engine.get_scope()
+    }
+
+    fn get_engine<'a>(&self) -> &'a ScriptEngine {
+        &self.engine
+    }
+
+    fn execute(&mut self, code: String) {
+        self.engine.execute(code);
+    }
+
+    fn set_code_block(&mut self, name: String, code: String) {
+        self.engine.set_code_block(name, code);
     }
 }

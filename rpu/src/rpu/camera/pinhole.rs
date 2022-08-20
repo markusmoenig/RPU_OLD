@@ -23,15 +23,6 @@ impl Camera3D for Pinhole<'_> {
         self.engine.execute_block("onupdate".to_string());
     }
 
-
-    fn execute(&mut self, code: String) {
-        self.engine.execute(code);
-    }
-
-    fn set_code_block(&mut self, name: String, code: String) {
-        self.engine.set_code_block(name, code);
-    }
-
     #[inline(always)]
     fn gen_ray(&self, p: Vector2<F>) -> [Vector3<F>; 2] {
 
@@ -48,5 +39,24 @@ impl Camera3D for Pinhole<'_> {
         [origin, rd]
     }
 
+}
+
+impl Script for Pinhole<'_> {
+
+    fn get_scope<'a>(&mut self) -> &'a Scope {
+        self.engine.get_scope()
+    }
+
+    fn get_engine<'a>(&self) -> &'a ScriptEngine {
+        &self.engine
+    }
+
+    fn execute(&mut self, code: String) {
+        self.engine.execute(code);
+    }
+
+    fn set_code_block(&mut self, name: String, code: String) {
+        self.engine.set_code_block(name, code);
+    }
 }
 

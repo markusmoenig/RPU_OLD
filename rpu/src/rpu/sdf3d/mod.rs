@@ -3,7 +3,7 @@ pub mod cube;
 
 use crate::prelude::*;
 
-pub trait SDF3D : Sync + Send {
+pub trait SDF3D : Sync + Send + Script {
     fn new() -> Self where Self: Sized;
 
     fn get_distance(&self, x: &Vector3<F>, instance: &Vector3<F>) -> F;
@@ -19,7 +19,4 @@ pub trait SDF3D : Sync + Send {
         n += e.xxx() * self.get_distance(&(x + e.xxx()), instance);
         n.normalize()
     }
-
-    fn execute(&mut self, code: String);
-    fn set_code_block(&mut self, name: String, code: String);
 }
