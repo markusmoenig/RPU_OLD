@@ -185,14 +185,14 @@ impl<'sourcecode> Scanner {
         }
     }
 
-    fn peek(&self) -> u8 {
+    pub fn peek(&self) -> u8 {
         if self.is_at_end() {
             0
         } else {
             self.code.as_bytes()[self.current]
         }
     }
-    fn peek_next(&self) -> u8 {
+    pub fn peek_next(&self) -> u8 {
         if self.current > self.code.len() - 2 {
             b'\0'
         } else {

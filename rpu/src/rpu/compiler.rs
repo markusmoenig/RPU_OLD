@@ -160,6 +160,7 @@ impl Compiler {
             }
         }
 
+        self.debug_current();
         self.consume(TokenType::Less, "Expected '<' after object identifier.");
 
         if let Some(object) = &mut object {
@@ -228,7 +229,6 @@ impl Compiler {
             let mut first = true;
 
             loop {
-                self.debug_current();
                 if self.check(TokenType::Colon) {
 
                     while self.check(TokenType::Colon) {
@@ -252,7 +252,7 @@ impl Compiler {
                 }
 
                 let symbols = self.parser.current.lexeme.chars();
-                println!("{:?}", symbols);
+                //println!("{:?}", symbols);
 
                 for c in symbols {
                     if c == ' ' {
@@ -326,12 +326,19 @@ impl Compiler {
         if self.parser.current.kind != TokenType::Greater {
             loop {
                 let key = self.parser.current.lexeme.clone().to_lowercase();
+
+                if self.check(TokenType::Slash) == true && self.scanner.peek() == b'>' {
+                    self.advance();
+                    self.advance();
+                    break;
+                }
+
                 self.consume(TokenType::Identifier, "Expected identifier after '<'.");
                 self.consume(TokenType::Colon, "Expected ':' after identifier.");
 
                 let mut value = "".to_string();
 
-                while /* !self.check(TokenType::Comma) &&*/ !self.check(TokenType::Greater) && !self.check(TokenType::Eof) {
+                while (self.check(TokenType::Slash) == false && self.scanner.peek() != b'>') && !self.check(TokenType::Eof) {
                     value += self.parser.current.lexeme.as_mut_str();
                     self.advance();
                 }
@@ -346,7 +353,8 @@ impl Compiler {
                 }
 
                 println!("{:?}, {:?}", key, value);
-                self.consume(TokenType::Greater, "Expected '>' after object properties.");
+                self.consume(TokenType::Slash, "Expected '/>' after object properties.");
+                self.consume(TokenType::Greater, "Expected '/>' after object properties.");
 
                 if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
                     break;
@@ -385,17 +393,24 @@ impl Compiler {
         if self.parser.current.kind != TokenType::Greater {
             loop {
                 let key = self.parser.current.lexeme.clone().to_lowercase();
+
+                if self.check(TokenType::Slash) == true && self.scanner.peek() == b'>' {
+                    self.advance();
+                    self.advance();
+                    break;
+                }
+
                 self.consume(TokenType::Identifier, "Expected identifier after '<'.");
                 self.consume(TokenType::Colon, "Expected ':' after identifier.");
 
                 let mut value = "".to_string();
 
-                while /* !self.check(TokenType::Comma) &&*/ !self.check(TokenType::Greater) && !self.check(TokenType::Eof) {
+                while (self.check(TokenType::Slash) == false && self.scanner.peek() != b'>') && !self.check(TokenType::Eof) {
                     value += self.parser.current.lexeme.as_mut_str();
-                    self.advance();
+                    self.advance_with_whitespace();
                 }
 
-                let code_blocks = ["onupdate".to_string()];
+                let code_blocks = ["onupdate".to_string(), "shader".to_string()];
 
                 if code_blocks.contains(&key) {
                     match object {
@@ -440,7 +455,8 @@ impl Compiler {
                 }
 
                 println!("{:?}, {:?}", key, value);
-                self.consume(TokenType::Greater, "Expected '>' after object properties.");
+                self.consume(TokenType::Slash, "Expected '/>' after object properties.");
+                self.consume(TokenType::Greater, "Expected '/>' after object properties.");
 
                 if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
                     break;
