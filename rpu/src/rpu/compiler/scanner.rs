@@ -253,6 +253,63 @@ impl<'sourcecode> Scanner {
         }
     }
 
+    pub fn scanline(&mut self, advance: usize) -> String {
+        let mut string = "".to_string();
+
+        let start = self.current + advance;
+        while !self.is_at_end() {
+            match self.peek() {
+                b'\n' => {
+                    string = self.code[start..self.current].to_string();
+                    self.advance();
+                    self.line += 1;
+                    break;
+                },
+                _ => {
+                    self.advance();
+                },
+            }
+        }
+        string
+    }
+
+    pub fn scan_indention_block(&mut self, advance: usize, min_indent: usize) -> Result<String, String> {
+        let mut string = "".to_string();
+
+        let start = self.current + advance;
+
+        let mut newline = false;
+        let mut indent = min_indent + 1;
+        while !self.is_at_end() {
+            match self.peek() {
+                b' ' => {
+                    if newline == true {
+                        indent += 1;
+                    }
+                    self.advance();
+                },
+                b'\n' => {
+                    newline = true;
+                    self.advance();
+                    self.line += 1;
+                    indent = 0;
+                },
+                _ => {
+                    newline = false;
+                    if indent <= min_indent {
+//                        return Err("Indention of function block too small.".to_owned());
+                        string = self.code[start..self.current].to_string();
+                        self.current -= 1;
+                        break;
+                    }
+                    self.advance();
+                }
+            }
+        }
+        return Ok(string);
+    }
+
+
     fn string(&mut self) -> Token {
         let b_current = self.current;
 

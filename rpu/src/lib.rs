@@ -38,6 +38,7 @@ pub mod prelude {
 
     pub use crate::rpu::compiler::Compiler;
     pub use crate::rpu::compiler::RPUError;
+    pub use crate::rpu::compiler::Property;
     pub use crate::rpu::compiler::scanner::Scanner;
     pub use crate::rpu::compiler::scanner::Token;
     pub use crate::rpu::compiler::context::Context;

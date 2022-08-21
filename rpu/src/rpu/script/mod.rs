@@ -5,6 +5,7 @@ pub trait Script : Sync + Send {
 
     fn get_scope<'a>(&mut self) -> &'a Scope;
     fn get_engine<'a>(&self) -> &'a ScriptEngine;
+    fn apply_properties(&mut self, props: Vec<Property>);
     fn set_code_block(&mut self, name: String, code: String);
     fn execute(&mut self, code: String);
 }

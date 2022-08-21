@@ -1,29 +1,28 @@
 // -- RPU v0.1
 
 Pinhole
-    <origin: F3(3.0, 0.5, 8.5)/>
-    <center: F3(3.0, 0.4, 0.0)/>
+    origin = F3(3.0, 0.5, 8.5)
+    center = F3(3.0, 0.4, 0.0)
     //<update: origin.y += 0.1/>
 
 Texture
-    <name: "Disc"/>
-    <size: F2(100.0, 100.0)/>
-    <shader:
+    name = "Disc"
+    static = F2(100, 100)
+    shader(uv)
         let d = length(uv) - 0.5;
         let r = if d < 0.0 { 1.0 } else { 0.5 };
         F4(r, 0.0, 0.0, 1.0)
-    />
 
-Voxel'a
-    <texture: "Disc"/>
-    //<rotation: F3(0.0, 0.0, 0.0)/>
-    //<position: F3(0.0, 0.0, 0.0)/>
-    //<update: rotation.y += 1.0/>
+sdfCube'a
+    texture = "Disc"
+    rotation = F3(0.0, 0.0, 0.0
+    position = F3(0.0, 0.0, 0.0)
+    update = rotation.y += 1.0
 
-Voxel'b
-    <radius: 0.5/>
+sdfSphere'b
+    radius = 0.5
 
-Grid3D</>
+Grid3D
 :    a
 :aab a
 :

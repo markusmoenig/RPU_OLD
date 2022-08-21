@@ -47,8 +47,8 @@ impl Element2D for Texture<'_> {
 
         if let Some(color) = &self.color {
             let [x, y] = p;
-            let xi = ((x + 0.5) * color.size[0] as F) as usize;
-            let yi = ((y + 0.5) * color.size[1] as F) as usize;
+            let xi = ((x + 0.5) * color.size[0] as F).clamp(0.0, (color.size[0] - 1) as F) as usize;
+            let yi = ((y + 0.5) * color.size[1] as F).clamp(0.0, (color.size[1] - 1)as F) as usize;
 
             let index = xi * 4 + yi * color.size[0] * 4;
 
@@ -84,6 +84,10 @@ impl Script for Texture<'_> {
 
     fn get_engine<'a>(&self) -> &'a ScriptEngine {
         &self.engine
+    }
+
+    fn apply_properties(&mut self, props: Vec<Property>) {
+        self.engine.apply_properties(props);
     }
 
     fn execute(&mut self, code: String) {

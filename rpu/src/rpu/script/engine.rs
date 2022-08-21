@@ -52,6 +52,40 @@ impl ScriptEngine<'_> {
         &mut self.scope
     }
 
+    pub fn apply_properties(&mut self, props: Vec<Property>) -> Result<(), RPUError> {
+        for p in props {
+            match p {
+                Property::Property(key, value) => {
+                    let cmd = format!("let {} = {};", key, value);
+                    println!("prop, {}", cmd);
+                    self.execute(cmd);
+                },
+                Property::Function(name, _args, body) => {
+                    // let code = format!("fn {}({}) {{ {} }};", name, args, body);
+                    let code = format!("{}", body);
+                    println!("fn, {}", code);
+                    //self.execute(cmd);
+                    if name == "shader" {
+
+                        let rc = self.engine.compile(code);
+
+                        if rc.is_ok() {
+                            if let Some(ast) = rc.ok() {
+                                self.shader = Some(ast);
+                            }
+                        } else
+                        if let Some(error) = rc.err() {
+                            println!("{:?}", error.to_string());
+                            let err = RPUError::new(ErrorType::Syntax, error.to_string(), error.1.line().unwrap() as u32);
+                            return Err(err);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn set_code_block(&mut self, name: String, code: String) -> Result<(), RPUError> {
 
         if name == "shader" {
@@ -115,7 +149,6 @@ impl ScriptEngine<'_> {
     }
 
     pub fn get_vector2(&self, name: &str) -> Option<Vector2<F>> {
-        println!("{:?}", self.scope);
         if let Some(v) = self.scope.get_value::<F2>(name) {
             return Some(v.value);
         }

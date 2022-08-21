@@ -48,6 +48,12 @@ impl Parser {
     }
 }
 
+pub enum Property {
+    Property(String, String),
+    Function(String, String, String),
+}
+
+
 pub struct Compiler {
     scanner                 : Scanner,
 
@@ -97,6 +103,7 @@ impl Compiler {
             let mut consumed = false;
 
             if self.indent() == 0 {
+
                 if self.parser.current.kind == TokenType::Identifier {
                     let idl = self.parser.current.lexeme.to_lowercase();
                     let id = idl.as_str();
@@ -136,6 +143,7 @@ impl Compiler {
         let mut object : Option<Object> = None;
         let mut symbol : Option<char> = None;
 
+        self.debug_current();
         // if self.parser.current.lexeme == "Cube" {
         //     object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
         // }
@@ -160,10 +168,20 @@ impl Compiler {
             }
         }
 
-        self.consume(TokenType::Less, "Expected '<' after object identifier.");
+        //self.consume(TokenType::Less, "Expected '<' after object identifier.");
+
+        let props = self.parse_object_properties();
 
         if let Some(object) = &mut object {
-            self.parse_object_properties(object);
+            match object {
+                Object::AnalyticalObject(object) => {
+                    object.apply_properties(props);
+                },
+                Object::SDF3D(sdf) => {
+                    sdf.apply_properties(props);
+                },
+                _ => {},
+            }
         }
 
         // Get the texture name if any
@@ -219,10 +237,10 @@ impl Compiler {
             }
         }
 
-        self.consume(TokenType::Less, "Expected '<' after object identifier.");
+        //self.consume(TokenType::Less, "Expected '<' after object identifier.");
 
         if let Some(object) = &mut object {
-            self.parse_object_properties(object);
+            //self.parse_object_properties(object);
 
             let mut map : HashMap<(i32, i32, i32), usize> = HashMap::new();
 
@@ -300,12 +318,11 @@ impl Compiler {
             self.advance();
         }
 
-        self.consume(TokenType::Less, "Expected '<' after object identifier.");
-
-        self.parse_object_properties(&mut object);
+        let props = self.parse_object_properties();
 
         match &mut object {
             Object::Element2D(texture) => {
+                texture.apply_properties(props);
                 texture.render();
             },
             _ => {}
@@ -326,49 +343,9 @@ impl Compiler {
 
         self.advance();
 
-        self.consume(TokenType::Less, "Expected '<' after object identifier.");
-        if self.parser.current.kind != TokenType::Greater {
-            loop {
-                let key = self.parser.current.lexeme.clone().to_lowercase();
+        let props = self.parse_object_properties();
 
-                if self.check(TokenType::Slash) == true && self.scanner.peek() == b'>' {
-                    self.advance();
-                    self.advance();
-                    break;
-                }
-
-                self.consume(TokenType::Identifier, "Expected identifier after '<'.");
-                self.consume(TokenType::Colon, "Expected ':' after identifier.");
-
-                let mut value = "".to_string();
-
-                while (self.check(TokenType::Slash) == false && self.scanner.peek() != b'>') && !self.check(TokenType::Eof) {
-                    value += self.parser.current.lexeme.as_mut_str();
-                    self.advance();
-                }
-
-                let code_blocks = ["update".to_string()];
-
-                if code_blocks.contains(&key) {
-                    object.set_code_block(key.clone(), value.clone());
-                } else {
-                    let code = format!("let {} = {}", key, value);
-                    object.execute(code);
-                }
-
-                println!("{:?}, {:?}", key, value);
-                self.consume(TokenType::Slash, "Expected '/>' after object properties.");
-                self.consume(TokenType::Greater, "Expected '/>' after object properties.");
-
-                if self.parser.current.kind != TokenType::Less {//|| self.parser.current.indent == 0 {
-                    break;
-                } else {
-                    self.advance();
-                }
-            }
-        } else {
-            self.advance();
-        }
+        object.apply_properties(props);
 
         ctx.camera = object;
     }
@@ -392,8 +369,65 @@ impl Compiler {
     }
 
     /// Parses the properties for the given object
-    fn parse_object_properties(&mut self, object: &mut Object) {
+    fn parse_object_properties(&mut self) -> Vec<Property> {
 
+        //let object_line = self.parser.current.line;
+        //println!("object on line {}", object_line);
+
+        let mut props : Vec<Property> = vec![];
+
+        loop {
+            let property = self.parser.current.lexeme.clone();
+            let indention = self.parser.current.indent;
+            let line = self.parser.current.line;
+            self.consume(TokenType::Identifier, "Expected identifier.");
+
+            if self.check(TokenType::Equal) {
+                let value = self.scanner.scanline(1);
+                //println!("assignment, line {}: {} = {}", line, property, value);
+                props.push(Property::Property(property, value));
+                self.advance();
+                if self.indent() == 0 {
+                    break;
+                }
+            } else
+            if self.check(TokenType::LeftParen) {
+                let mut args = "".to_string();
+                self.advance();
+                loop {
+                    if self.check(TokenType::Identifier) {
+                        args += self.parser.current.lexeme.clone().as_str();
+                        self.advance();
+                    } else
+                    if self.check(TokenType::RightParen) {
+                        break;
+                    } else
+                    if self.check(TokenType::Comma) {
+                        args += ",";
+                        self.advance();
+                    } else {
+                        self.error_at_current("Invalid function arguments");
+                        break;
+                    }
+                }
+                let code = self.scanner.scan_indention_block(1, indention);
+                //println!("function, line {}: {}, {:?}", line, args, code.ok());
+                if let Some(code) = code.ok() {
+                    props.push(Property::Function(property, args, code));
+                }
+                self.advance();
+                if self.indent() == 0 {
+                    break;
+                }
+                self.debug_current();
+            } else {
+                break;
+            }
+        }
+
+        props
+
+        /*
         if self.parser.current.kind != TokenType::Greater {
             loop {
                 let key = self.parser.current.lexeme.clone().to_lowercase();
@@ -470,7 +504,7 @@ impl Compiler {
             }
         } else {
             self.advance();
-        }
+        }*/
     }
 
     /// Advance one token
