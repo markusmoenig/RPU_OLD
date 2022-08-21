@@ -26,8 +26,9 @@ fn main() -> Result<(), Error> {
     let mut rpu = RPU::new(width, height);
     let rc = rpu.compile_from_path(path_to_main);
 
-    if rc.is_err() {
-        println!("{:?}", rc.err());
+    if let Some(error) = rc.err() {
+        let error_text = format!("Compilation error: {} at line {}.", error.description, error.line);
+        println!("{}", error_text.as_str());
         return Ok(());
     }
 
@@ -55,9 +56,9 @@ fn main() -> Result<(), Error> {
    event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            let start = get_time();
+            // let start = get_time();
             rpu.render(&mut pixels.get_frame()[..], (0, 0, width, height));
-            println!("Time: {}", get_time() - start);
+            // println!("Time: {}", get_time() - start);
             if pixels
                 .render()
                 .map_err(|e| error!("pixels.render() failed: {}", e))

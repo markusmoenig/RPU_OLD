@@ -15,9 +15,9 @@ pub enum ErrorType {
 
 #[derive(Clone, Debug)]
 pub struct RPUError {
-    error_type              : ErrorType,
-    description             : String,
-    line                    : u32,
+    pub error_type              : ErrorType,
+    pub description             : String,
+    pub line                    : u32,
 }
 
 impl RPUError {
