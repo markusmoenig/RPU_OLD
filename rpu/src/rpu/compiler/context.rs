@@ -72,7 +72,7 @@ impl Context {
                             hit = true;
                         }
                     } else {
-                        for i in 0..self.nodes.len() {
+                        for i in 0..self.textures.len() {
                             if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[i].object) {
                                 pixel.copy_from_slice(&c);
                                 hit = true;
@@ -116,8 +116,9 @@ impl Context {
         let mut c = [0.0, 0.0, 0.0, 1.0];
 
         match object {
+            /*
             Object::AnalyticalObject(object) => {
-                if let Some(hit) = object.get_distance_normal_uv_face(&ray) {
+                if let Some(hit) = object.get_distance(&ray) {
 
                     let tex_index= 0_usize;
                     match &self.textures[tex_index] {
@@ -130,7 +131,7 @@ impl Context {
                 } else {
                     return None;
                 }
-            },
+            },*/
             Object::SDF3D(object) => {
 
                 let [ro, rd] = ray;

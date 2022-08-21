@@ -14,13 +14,13 @@ pub enum ErrorType {
 }
 
 #[derive(Clone, Debug)]
-pub struct Error {
+pub struct RPUError {
     error_type              : ErrorType,
     description             : String,
     line                    : u32,
 }
 
-impl Error {
+impl RPUError {
     pub fn new(error_type: ErrorType, description: String, line: u32) -> Self {
         Self {
             error_type,
@@ -34,7 +34,7 @@ struct Parser {
     current             : Token,
     previous            : Token,
 
-    error               : Option<Error>,
+    error               : Option<RPUError>,
 }
 
 impl Parser {
@@ -63,7 +63,7 @@ impl Compiler {
         }
     }
 
-    pub fn compile_from_path(&mut self, path_to_main : PathBuf) -> Result<Context, Error> {
+    pub fn compile_from_path(&mut self, path_to_main : PathBuf) -> Result<Context, RPUError> {
 
         let mut main_code = "".to_string();
 
@@ -140,7 +140,7 @@ impl Compiler {
         //     object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
         // }
         if self.parser.current.lexeme.to_lowercase() == "voxel" {
-            object = Some(Object::Voxel);
+            object = Some(Object::AnalyticalObject(Box::new(AnalyticalVoxel::new())));
         } else
         if self.parser.current.lexeme.to_lowercase() == "sdfcube" {
             object = Some(Object::SDF3D(Box::new(SDF3DCube::new())));
@@ -160,7 +160,6 @@ impl Compiler {
             }
         }
 
-        self.debug_current();
         self.consume(TokenType::Less, "Expected '<' after object identifier.");
 
         if let Some(object) = &mut object {
@@ -172,6 +171,11 @@ impl Compiler {
 
         if let Some(object) = &object {
             match object {
+                Object::AnalyticalObject(object) => {
+                    if let Some(name) = object.get_engine().get_string("texture") {
+                        texture = self.get_texture_index(name, ctx);
+                    }
+                },
                 Object::SDF3D(sdf) => {
                     if let Some(name) = sdf.get_engine().get_string("texture") {
                         texture = self.get_texture_index(name, ctx);
@@ -302,7 +306,7 @@ impl Compiler {
 
         match &mut object {
             Object::Element2D(texture) => {
-                //texture.alloc();
+                texture.render();
             },
             _ => {}
         }
@@ -343,7 +347,7 @@ impl Compiler {
                     self.advance();
                 }
 
-                let code_blocks = ["onupdate".to_string()];
+                let code_blocks = ["update".to_string()];
 
                 if code_blocks.contains(&key) {
                     object.set_code_block(key.clone(), value.clone());
@@ -356,7 +360,7 @@ impl Compiler {
                 self.consume(TokenType::Slash, "Expected '/>' after object properties.");
                 self.consume(TokenType::Greater, "Expected '/>' after object properties.");
 
-                if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
+                if self.parser.current.kind != TokenType::Less {//|| self.parser.current.indent == 0 {
                     break;
                 } else {
                     self.advance();
@@ -410,7 +414,7 @@ impl Compiler {
                     self.advance_with_whitespace();
                 }
 
-                let code_blocks = ["onupdate".to_string(), "shader".to_string()];
+                let code_blocks = ["update".to_string(), "shader".to_string()];
 
                 if code_blocks.contains(&key) {
                     match object {
@@ -551,6 +555,6 @@ impl Compiler {
     /// Error at the given token
     fn error_at(&mut self, _token: Token, message: &str) {
         if self.parser.error.is_some() { return; }
-        self.parser.error = Some(Error::new(ErrorType::Syntax, message.to_string(), self.parser.current.line as u32));
+        self.parser.error = Some(RPUError::new(ErrorType::Syntax, message.to_string(), self.parser.current.line as u32));
     }
 }

@@ -1,9 +1,8 @@
 use crate::prelude::*;
 
 pub struct Grid3D<'a> {
-
-        map                 : HashMap<(i32, i32, i32), usize>,
         engine              : ScriptEngine<'a>,
+        buffer              : IndexBuffer3D,
 }
 
 impl Layout3D for Grid3D<'_> {
@@ -13,23 +12,26 @@ impl Layout3D for Grid3D<'_> {
         let engine = ScriptEngine::new();
 
         Self {
-            map             : HashMap::new(),
             engine,
+            buffer          : IndexBuffer3D::new(),
         }
     }
 
     fn set_map3d(&mut self, map: HashMap<(i32, i32, i32), usize>) {
-        self.map = map;
+        self.buffer.alloc(20, 20, 20);
+        for (i, v) in map {
+            self.buffer.set(i.0 as usize, i.1 as usize, i.2 as usize, v);
+        }
     }
 
     fn traverse3d(&self, ray: &Ray, get_normal: bool, ctx: &Context) -> Option<HitRecord> {
 
-        fn get_uv(hp: &Vector3<F>, mask: &glm::BVec3) -> Vector2<F> {
+        fn get_uv(hp: &Vector3<F>, mask: &glm::Vec3) -> Vector2<F> {
             let uv : Vector2<F>;
-            if mask.x {
+            if mask.x > 0.5 {
                 uv = Vector2::new( (hp.z.abs()).fract() - 0.5, (hp.y.abs()).fract() - 0.5);
             } else
-            if mask.y {
+            if mask.y > 0.5 {
                 uv = Vector2::new( (hp.x.abs()).fract() - 0.5, (hp.z.abs()).fract() - 0.5);
             } else {
                 uv = Vector2::new( (hp.x.abs()).fract() - 0.5, (hp.y.abs()).fract() - 0.5);
@@ -61,23 +63,24 @@ impl Layout3D for Grid3D<'_> {
         side_dist.y = (rd.y.signum() * (map_pos.y as f32 - ro.y) + (rd.y.signum() * 0.5) + 0.5) * delta_dist.y;
         side_dist.z = (rd.z.signum() * (map_pos.z as f32 - ro.z) + (rd.z.signum() * 0.5) + 0.5) * delta_dist.z;
 
-        let mut mask = glm::BVec3::new(false, false, false);
+        let mut mask = glm::Vec3::new(0.0, 0.0, 0.0);
 
         for _i in 0..14 {
-
-            if let Some(index) = self.map.get(&(map_pos.x, map_pos.y, map_pos.z)) {
+            if map_pos.x < 0 || map_pos.y < 0 || map_pos.z < 0 { continue; }
+            if let Some(index) = self.buffer.get(map_pos.x as usize, map_pos.y as usize, map_pos.z as usize) {
 
                 //float d = length(vec3(mask) * (sideDist - deltaDist)); // rayDir normalized
-                let dx = mask.x as i32 as f32 * (side_dist.x - delta_dist.x);
-                let dy = mask.y as i32 as f32 * (side_dist.y - delta_dist.y);
-                let dz = mask.z as i32 as f32 * (side_dist.z - delta_dist.z);
+                let dx = mask.x * (side_dist.x - delta_dist.x);
+                let dy = mask.y * (side_dist.y - delta_dist.y);
+                let dz = mask.z * (side_dist.z - delta_dist.z);
                 let dist = glm::length(&glm::Vec3::new(dx, dy, dz));
 
-                match &ctx.nodes[*index].object {
+                match &ctx.nodes[index].object {
 
                     Object::SDF3D(object) => {
                         let hp = Vector3::new(map_pos.x as F + 0.5, map_pos.y as F + 0.5, map_pos.z as F + 0.5);
                         let mut t = dist;
+                        let t_max = dist + 1.73205;
                         for _i in 0..24 {
                             let p = ro + rd * t;
                             let d = object.get_distance(&p, &hp);
@@ -85,7 +88,7 @@ impl Layout3D for Grid3D<'_> {
 
                                 return Some( HitRecord {
                                     distance        : dist,
-                                    node            : *index,
+                                    node            : index,
                                     hit_point       : p,
                                     mask            : mask,
                                     normal          : if get_normal { object.get_normal(&p, &hp) } else { Vector3::new(0.0, 0.0, 0.0) },
@@ -93,25 +96,27 @@ impl Layout3D for Grid3D<'_> {
                                     face            : 0
                                 });
                             }
-                            if t > dist + 1.73205 {
+                            if t > t_max {
                                 break;
                             }
                             t += d;
                         }
                     },
-                    Object::Voxel => {
+                    Object::AnalyticalObject(object) => {
 
-                        let hp = ro + rd * dist;
+                        if let Some(_d) = object.get_distance(ray) {
+                            let hp = ro + rd * dist;
 
-                        return Some( HitRecord {
-                            distance        : dist,
-                            node            : *index,
-                            hit_point       : hp,
-                            mask            : mask,
-                            normal          : Vector3::new(0.0, 0.0, 0.0),
-                            uv              : get_uv(&hp, &mask),
-                            face            : 0
-                        });
+                            return Some( HitRecord {
+                                distance        : dist,
+                                node            : index,
+                                hit_point       : hp,
+                                mask            : mask,
+                                normal          : Vector3::new(0.0, 0.0, 0.0),
+                                uv              : get_uv(&hp, &mask),
+                                face            : 0
+                            });
+                        }
                     }
                     _ => {},
                 }
@@ -121,71 +126,24 @@ impl Layout3D for Grid3D<'_> {
 				if side_dist.x < side_dist.z {
 					side_dist.x += delta_dist.x;
 					map_pos.x += ray_step.x;
-					mask = glm::BVec3::new(true, false, false);
+					mask = glm::Vec3::new(1.0, 0.0, 0.0);
 				} else {
 					side_dist.z += delta_dist.z;
 					map_pos.z += ray_step.z;
-					mask = glm::BVec3::new(false, false, true);
+					mask = glm::Vec3::new(0.0, 0.0, 1.0);
 				}
 			} else {
 				if side_dist.y < side_dist.z {
 					side_dist.y += delta_dist.y;
 					map_pos.y += ray_step.y;
-					mask = glm::BVec3::new(false, true, false);
+					mask = glm::Vec3::new(0.0, 1.0, 0.0);
 				} else {
 					side_dist.z += delta_dist.z;
 					map_pos.z += ray_step.z;
-					mask = glm::BVec3::new(false, false, true);
+					mask = glm::Vec3::new(0.0, 0.0, 1.0);
 				}
 			}
         }
-
-        /*
-        if let Some(index) = node_index {
-
-            //float d = length(vec3(mask) * (sideDist - deltaDist)); // rayDir normalized
-            let dx = mask.x as i32 as f32 * (side_dist.x - delta_dist.x);
-            let dy = mask.y as i32 as f32 * (side_dist.y - delta_dist.y);
-            let dz = mask.z as i32 as f32 * (side_dist.z - delta_dist.z);
-            let dist = glm::length(&glm::Vec3::new(dx, dy, dz));
-
-
-            // if mask.x || mask.y || mask.z {
-            //     return Some( HitRecord {
-            //         distance        : 1.0,
-            //         node            : index,
-            //         normal          : Vector3::new(1.0, 1.0, 1.0),
-            //         uv              : Vector2::new(0.0, 0.0),
-            //         face            : 0
-            //     });
-            // }
-            let mut t = dist;
-            match &ctx.nodes[index].object {
-
-                Object::SDF3D(object) => {
-                    let hp = Vector3::new(map_pos.x as F + 0.5, map_pos.y as F + 0.5, map_pos.z as F + 0.0);
-                    for _i in 0..24 {
-                        let p = ro + rd * t;
-                        let d = object.get_distance(&p, &hp);
-                        if d < 0.001 {
-
-                            return Some( HitRecord {
-                                distance        : dist,
-                                node            : index,
-                                normal          : if get_normal { object.get_normal(&p, &hp) } else { Vector3::new(0.0, 0.0, 0.0) },
-                                uv              : Vector2::new(0.0, 0.0),
-                                face            : 0
-                            });
-                        }
-                        if t > t + 1.0 {
-                            //break;
-                        }
-                        t += d;
-                    }
-                }
-                _ => {},
-            }
-        }*/
 
         None
     }
@@ -195,6 +153,6 @@ impl Layout3D for Grid3D<'_> {
     }
 
     fn set_code_block(&mut self, name: String, code: String) {
-        self.engine.set_code_block(name, code);
+        _ = self.engine.set_code_block(name, code);
     }
 }

@@ -15,6 +15,7 @@ pub mod prelude {
 
     pub use crate::rpu::buffer::Buffer;
     pub use crate::rpu::buffer::ColorBuffer;
+    pub use crate::rpu::buffer::IndexBuffer3D;
 
     pub use crate::rpu::script::*;
     pub use crate::rpu::script::engine::ScriptEngine;
@@ -28,6 +29,7 @@ pub mod prelude {
     pub use crate::rpu::sdf3d::cube::SDF3DCube;
 
     pub use crate::rpu::analytical::Analytical;
+    pub use crate::rpu::analytical::voxel::AnalyticalVoxel;
     // pub use crate::rpu::analytical::sphere::AnalyticalSphere;
     // pub use crate::rpu::analytical::cube::AnalyticalCube;
 
@@ -35,7 +37,7 @@ pub mod prelude {
     pub use crate::rpu::layout3d::grid3d::Grid3D;
 
     pub use crate::rpu::compiler::Compiler;
-    pub use crate::rpu::compiler::Error;
+    pub use crate::rpu::compiler::RPUError;
     pub use crate::rpu::compiler::scanner::Scanner;
     pub use crate::rpu::compiler::scanner::Token;
     pub use crate::rpu::compiler::context::Context;
@@ -57,7 +59,7 @@ pub mod prelude {
     pub use std::path::PathBuf;
     pub use std::collections::HashMap;
 
-    pub use rhai::{Engine, Scope};
+    pub use rhai::{Engine, Scope, AST};
 }
 
 #[macro_use]

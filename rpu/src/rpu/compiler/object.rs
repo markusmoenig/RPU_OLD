@@ -8,7 +8,6 @@ pub enum Object {
     Layout3D(Box<dyn Layout3D>),
     Element2D(Box<dyn Element2D>),
     Camera3D(Box<dyn Camera3D>),
-    Voxel,
 }
 
 // impl Object {

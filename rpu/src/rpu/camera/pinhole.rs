@@ -20,7 +20,7 @@ impl Camera3D for Pinhole<'_> {
     }
 
     fn update(&mut self) {
-        self.engine.execute_block("onupdate".to_string());
+        self.engine.execute_block("update".to_string());
     }
 
     #[inline(always)]
@@ -56,7 +56,7 @@ impl Script for Pinhole<'_> {
     }
 
     fn set_code_block(&mut self, name: String, code: String) {
-        self.engine.set_code_block(name, code);
+        _ = self.engine.set_code_block(name, code);
     }
 }
 

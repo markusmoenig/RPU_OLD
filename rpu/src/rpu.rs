@@ -31,7 +31,7 @@ impl RPU {
         }
     }
 
-    pub fn compile_from_path(&mut self, path_to_main: PathBuf) -> Result<(), Error> {
+    pub fn compile_from_path(&mut self, path_to_main: PathBuf) -> Result<(), RPUError> {
 
         let mut compiler = Compiler::new();
         let rc = compiler.compile_from_path(path_to_main);

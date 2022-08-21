@@ -61,6 +61,6 @@ impl Renderer for Textured<'_> {
     }
 
     fn set_code_block(&mut self, name: String, code: String) {
-        self.engine.set_code_block(name, code);
+        _ = self.engine.set_code_block(name, code);
     }
 }

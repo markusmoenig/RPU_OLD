@@ -44,6 +44,41 @@ impl<T: Clone> Buffer<T> {
 }
 
 #[derive(Clone)]
+pub struct IndexBuffer3D {
+    pub elements        : Vec<Option<usize>>,
+    pub size            : [usize; 3],
+    pub slice_size      : usize,
+}
+
+impl IndexBuffer3D {
+    pub fn new () -> Self {
+
+        Self {
+            elements    : vec![],
+            size        : [0, 0, 0],
+            slice_size  : 0,
+        }
+    }
+
+    pub fn alloc(&mut self, x: usize, y: usize, z: usize) {
+        self.elements = vec![None; x * y * z];
+        self.size = [x, y, z];
+        self.slice_size = x * z;
+    }
+
+    #[inline(always)]
+    pub fn get(&self, x: usize, y: usize, z: usize) -> Option<usize> {
+        let index = y * self.slice_size + x + z * self.size[0];
+        self.elements[index]
+    }
+
+    pub fn set(&mut self, x: usize, y: usize, z: usize, v: usize) {
+        let index = y * self.slice_size + x + z * self.size[0];
+        self.elements[index] = Some(v);
+    }
+}
+
+#[derive(Clone)]
 pub struct ColorBuffer<T> {
     pub pixels          : Vec<T>,
     pub size            : [usize; 2],

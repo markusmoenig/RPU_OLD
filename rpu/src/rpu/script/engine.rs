@@ -1,7 +1,9 @@
-use crate::prelude::*;
+use crate::{prelude::*, rpu::compiler::ErrorType};
 pub struct ScriptEngine<'a> {
         engine              : Engine,
         scope               : Scope<'a>,
+
+        pub shader          : Option<AST>,
 
         code_blocks         : HashMap<String, String>
 }
@@ -41,6 +43,8 @@ impl ScriptEngine<'_> {
             engine,
             scope           : Scope::new(),
             code_blocks     : HashMap::new(),
+
+            shader          : None,
         }
     }
 
@@ -48,8 +52,27 @@ impl ScriptEngine<'_> {
         &mut self.scope
     }
 
-    pub fn set_code_block(&mut self, name: String, code: String) {
-        self.code_blocks.insert(name, code);
+    pub fn set_code_block(&mut self, name: String, code: String) -> Result<(), RPUError> {
+
+        if name == "shader" {
+
+            let rc = self.engine.compile(code);
+
+            if rc.is_ok() {
+                if let Some(ast) = rc.ok() {
+                    self.shader = Some(ast);
+                }
+            } else
+            if let Some(error) = rc.err() {
+                println!("{:?}", error.to_string());
+                let err = RPUError::new(ErrorType::Syntax, error.to_string(), error.1.line().unwrap() as u32);
+                return Err(err);
+            }
+        } else {
+            self.code_blocks.insert(name, code);
+        }
+
+        Ok(())
     }
 
     pub fn execute(&mut self, code: String) {
@@ -60,14 +83,12 @@ impl ScriptEngine<'_> {
     pub fn execute_shader(&self, uv: &[F; 2]) -> Color {
         let mut color = [0.0, 0.0, 0.0, 1.0];
 
-        if let Some(code) = &self.code_blocks.get(&"shader".to_string()) {
+        let mut scope = Scope::new();
+        scope.set_value("uv", F2::new_2(uv[0], uv[1]));
 
-            let mut scope = Scope::new();
-            scope.set_value("uv", F2::new_2(uv[0], uv[1]));
+        if let Some(ast) = &self.shader {
+            let rc = self.engine.eval_ast_with_scope::<F4>(&mut scope, &ast);
 
-            let rc = self.engine.eval_with_scope::<F4>(&mut scope, code.as_str());
-
-            //println!("{:?}", rc);
             if let Some(out) = rc.ok() {
                 color[0] = out.value.x;
                 color[1] = out.value.y;
@@ -91,6 +112,18 @@ impl ScriptEngine<'_> {
         }
 
         false
+    }
+
+    pub fn get_vector2(&self, name: &str) -> Option<Vector2<F>> {
+        println!("{:?}", self.scope);
+        if let Some(v) = self.scope.get_value::<F2>(name) {
+            return Some(v.value);
+        }
+        None
+    }
+
+    pub fn set_vector2(&mut self, name: &str, v: Vector2<F>) {
+        self.scope.set_value(name, F2::new(v));
     }
 
     pub fn get_vector3(&self, name: &str) -> Option<Vector3<F>> {
