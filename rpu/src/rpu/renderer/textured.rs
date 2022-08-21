@@ -24,10 +24,6 @@ impl Renderer for Textured<'_> {
                     if let Some(hit) = layout.traverse3d(&ray,true, ctx) {
 
                         if let Some(texture) = &ctx.nodes[hit.node].texture {
-                            //&ctx.textures[*texture];
-                            //println!("here");
-                            //println!("shader {}", text)
-
                             match &ctx.textures[*texture] {
                                 Object::Element2D(el) => {
                                     let uv = hit.uv;
@@ -39,16 +35,6 @@ impl Renderer for Textured<'_> {
                             c[0] = hit.uv.x + 0.5;
                             c[1] = hit.uv.y + 0.5;
                         }
-                        //c[2] = hit.normal.z;
-
-                        // let tex_index= 0_usize;
-                        // match &ctx.textures[tex_index] {
-                        //     Object::Element2D(el) => {
-                        //         let uv = hit.uv;
-                        //         c = el.get_color_at(&[uv.x, uv.y]);
-                        //     },
-                        //     _ => {},
-                        // }
                     }
                 }
                 _ => {},

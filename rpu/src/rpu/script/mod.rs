@@ -1,11 +1,14 @@
 use crate::prelude::*;
 
+use std::iter::once;
+use rhai::FuncArgs;
+
 pub mod engine;
 pub trait Script : Sync + Send {
 
     fn get_scope<'a>(&mut self) -> &'a Scope;
     fn get_engine<'a>(&self) -> &'a ScriptEngine;
-    fn apply_properties(&mut self, props: Vec<Property>);
+    fn apply_properties(&mut self, props: Vec<Property>) -> Result<(), RPUError>;
     fn set_code_block(&mut self, name: String, code: String);
     fn execute(&mut self, code: String);
 }
@@ -50,6 +53,12 @@ impl F2 {
 
     fn set_y(&mut self, new_val: F) {
         self.value.y = new_val;
+    }
+}
+
+impl FuncArgs for F2 {
+    fn parse<C: Extend<rhai::Dynamic>>(self, container: &mut C) {
+        container.extend(once(rhai::Dynamic::from(self.value)));
     }
 }
 

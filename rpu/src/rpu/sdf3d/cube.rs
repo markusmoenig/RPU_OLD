@@ -44,8 +44,8 @@ impl Script for SDF3DCube<'_> {
         &self.engine
     }
 
-    fn apply_properties(&mut self, props: Vec<Property>) {
-        self.engine.apply_properties(props);
+    fn apply_properties(&mut self, props: Vec<Property>) -> Result<(), RPUError> {
+        self.engine.apply_properties(props)
     }
 
     fn execute(&mut self, code: String) {

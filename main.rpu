@@ -7,7 +7,7 @@ Pinhole
 
 Texture
     name = "Disc"
-    static = F2(100, 100)
+    size = F2(100.0, 100.0)
     shader(uv)
         let d = length(uv) - 0.5;
         let r = if d < 0.0 { 1.0 } else { 0.5 };

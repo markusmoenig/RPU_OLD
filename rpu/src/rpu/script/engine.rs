@@ -35,9 +35,7 @@ impl ScriptEngine<'_> {
             .register_get_set("z", F4::get_z, F4::set_z)
             .register_get_set("w", F4::get_w, F4::set_w);
 
-        engine.register_fn("length", |f2: F2| {
-            f2.value.norm()
-        });
+        engine.register_fn("length", |f2: &mut F2| f2.value.norm());
 
         Self {
             engine,
@@ -60,13 +58,11 @@ impl ScriptEngine<'_> {
                     println!("prop, {}", cmd);
                     self.execute(cmd);
                 },
-                Property::Function(name, _args, body) => {
-                    // let code = format!("fn {}({}) {{ {} }};", name, args, body);
-                    let code = format!("{}", body);
+                Property::Function(name, args, body) => {
+                    let code = format!("fn {}({}) {{ {} }};", name, args, body);
+                    // let code = format!("{}", body);
                     println!("fn, {}", code);
-                    //self.execute(cmd);
                     if name == "shader" {
-
                         let rc = self.engine.compile(code);
 
                         if rc.is_ok() {
@@ -75,7 +71,6 @@ impl ScriptEngine<'_> {
                             }
                         } else
                         if let Some(error) = rc.err() {
-                            println!("{:?}", error.to_string());
                             let err = RPUError::new(ErrorType::Syntax, error.to_string(), error.1.line().unwrap() as u32);
                             return Err(err);
                         }
@@ -121,13 +116,18 @@ impl ScriptEngine<'_> {
         scope.set_value("uv", F2::new_2(uv[0], uv[1]));
 
         if let Some(ast) = &self.shader {
-            let rc = self.engine.eval_ast_with_scope::<F4>(&mut scope, &ast);
+            let v = F2::new_2(uv[0], uv[1]);
+            let rc = self.engine.call_fn::<F4>(&mut scope, &ast, "shader", (v,));
 
-            if let Some(out) = rc.ok() {
-                color[0] = out.value.x;
-                color[1] = out.value.y;
-                color[2] = out.value.z;
-                color[3] = out.value.w;
+            if rc.is_ok() {
+                if let Some(out) = rc.ok() {
+                    color[0] = out.value.x;
+                    color[1] = out.value.y;
+                    color[2] = out.value.z;
+                    color[3] = out.value.w;
+                }
+            } else {
+                println!("{:?}", rc);
             }
         }
         color

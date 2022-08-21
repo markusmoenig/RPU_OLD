@@ -175,10 +175,10 @@ impl Compiler {
         if let Some(object) = &mut object {
             match object {
                 Object::AnalyticalObject(object) => {
-                    object.apply_properties(props);
+                    self.parser.error = object.apply_properties(props).err();
                 },
                 Object::SDF3D(sdf) => {
-                    sdf.apply_properties(props);
+                    self.parser.error = sdf.apply_properties(props).err();
                 },
                 _ => {},
             }
@@ -245,7 +245,7 @@ impl Compiler {
             let mut map : HashMap<(i32, i32, i32), usize> = HashMap::new();
 
             let mut x = 0;
-            let mut y = 0;
+            let y = 0;
             let mut z = 0;
 
             let mut first = true;
@@ -322,7 +322,7 @@ impl Compiler {
 
         match &mut object {
             Object::Element2D(texture) => {
-                texture.apply_properties(props);
+                self.parser.error = texture.apply_properties(props).err();
                 texture.render();
             },
             _ => {}
@@ -344,8 +344,7 @@ impl Compiler {
         self.advance();
 
         let props = self.parse_object_properties();
-
-        object.apply_properties(props);
+        self.parser.error = object.apply_properties(props).err();
 
         ctx.camera = object;
     }
@@ -379,7 +378,7 @@ impl Compiler {
         loop {
             let property = self.parser.current.lexeme.clone();
             let indention = self.parser.current.indent;
-            let line = self.parser.current.line;
+            //let line = self.parser.current.line;
             self.consume(TokenType::Identifier, "Expected identifier.");
 
             if self.check(TokenType::Equal) {
@@ -582,7 +581,7 @@ impl Compiler {
     }
 
     /// Error at the previous token
-    fn error(&mut self, message: &str) {
+    fn _error(&mut self, message: &str) {
         self.error_at(self.parser.previous.clone(), message)
     }
 

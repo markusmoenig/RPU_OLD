@@ -55,9 +55,9 @@ fn main() -> Result<(), Error> {
    event_loop.run(move |event, _, control_flow| {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
-            // let start = get_time();
+            let start = get_time();
             rpu.render(&mut pixels.get_frame()[..], (0, 0, width, height));
-            // println!("Time: {}", get_time() - start);
+            println!("Time: {}", get_time() - start);
             if pixels
                 .render()
                 .map_err(|e| error!("pixels.render() failed: {}", e))
