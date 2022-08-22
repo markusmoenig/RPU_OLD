@@ -17,6 +17,8 @@ fn get_time() -> u128 {
 
 fn main() -> Result<(), Error> {
 
+    env_logger::init();
+
     let width = 600;
     let height = 400;
 
@@ -32,7 +34,6 @@ fn main() -> Result<(), Error> {
         return Ok(());
     }
 
-    env_logger::init();
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
     let window = {

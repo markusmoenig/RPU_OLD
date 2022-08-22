@@ -23,8 +23,8 @@ impl Renderer for Textured<'_> {
 
                     if let Some(hit) = layout.traverse3d(&ray,true, ctx) {
 
-                        if let Some(texture) = &ctx.nodes[hit.node].texture {
-                            match &ctx.textures[*texture] {
+                        if let Some(texture_index) = &ctx.nodes[hit.node].texture {
+                            match &ctx.nodes[*texture_index].object {
                                 Object::Element2D(el) => {
                                     let uv = hit.uv;
                                     c = el.get_color_at(&[uv.x, uv.y]);

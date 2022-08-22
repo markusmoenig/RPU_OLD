@@ -42,7 +42,7 @@ pub mod prelude {
     pub use crate::rpu::compiler::scanner::Scanner;
     pub use crate::rpu::compiler::scanner::Token;
     pub use crate::rpu::compiler::context::Context;
-    pub use crate::rpu::compiler::node::Node;
+    pub use crate::rpu::compiler::node::*;
     pub use crate::rpu::compiler::object::Object;
     pub use crate::rpu::compiler::context::*;
 
@@ -50,6 +50,8 @@ pub mod prelude {
     pub use crate::rpu::renderer::textured::Textured;
 
     pub use crate::rpu::element2d::texture::Texture;
+    pub use crate::rpu::element2d::vertical::Vertical;
+    pub use crate::rpu::element2d::color::ColorElement;
 
     pub use crate::rpu::hit::*;
 
@@ -61,6 +63,8 @@ pub mod prelude {
     pub use std::collections::HashMap;
 
     pub use rhai::{Engine, Scope, AST};
+
+    pub use log::{debug, error, log_enabled, info, Level};
 }
 
 #[macro_use]

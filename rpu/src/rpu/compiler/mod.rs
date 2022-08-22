@@ -58,6 +58,11 @@ pub struct Compiler {
     scanner                 : Scanner,
 
     parser                  : Parser,
+
+    elements2d              : Vec<String>,
+    objects3d               : Vec<String>,
+
+    curr_parent             : Option<usize>
 }
 
 impl Compiler {
@@ -66,6 +71,11 @@ impl Compiler {
         Self {
             scanner         : Scanner::new("".to_string()),
             parser          : Parser::new(),
+
+            elements2d      : vec!["Texture".to_string(), "Vertical".to_string(), "Color".to_string()],
+            objects3d       : vec!["Voxel".to_string(), "sdfCube".to_string(), "sdfSphere".to_string()],
+
+            curr_parent     : None,
         }
     }
 
@@ -82,13 +92,53 @@ impl Compiler {
 
         self.scanner = Scanner::new(main_code);
 
+        self.curr_parent = None;
         self.add_to_context(&mut context);
 
         if self.parser.error.is_some() {
             return Err(self.parser.error.clone().unwrap());
         }
 
+        // Log the project structure
+
+        struct StructureEnv { indent: u32 }
+        fn log_node (node_index: usize, env: &mut StructureEnv, ctx: &Context) {
+            let mut message = "".to_string();
+            for _ in 0..env.indent {
+                message += " ";
+            }
+            log::info!("{}{:?}, Elements: {}", message, ctx.nodes[node_index].get_node_type(), ctx.nodes[node_index].elements.len());
+            env.indent += 2;
+            for n in &ctx.nodes[node_index].childs {
+                log_node(*n, env, ctx);
+            }
+            env.indent -= 2;
+        }
+
+        log::info!("Textures ---------------");
+
+        for n in &context.textures {
+            log_node(*n, &mut StructureEnv { indent: 0 }, &context);
+        }
+
+        log::info!("Objects ---------------");
+
+        for n in &context.objects {
+            log_node(*n, &mut StructureEnv { indent: 0 }, &context);
+        }
+
         Ok(context)
+    }
+
+    /// Logger
+    pub fn log(&self, msg: String) {
+        let mut message = "".to_string();
+        for _ in 0..self.parser.current.indent {
+            message += " ";
+        }
+        message += msg.as_str();
+        message += format!(" on line {}", self.parser.current.line).as_str();
+        log::info!("{}", message);
     }
 
     pub fn add_to_context(&mut self, ctx: &mut Context) {
@@ -97,31 +147,44 @@ impl Compiler {
 
         while !self.matches(TokenType::Eof) {
 
-            let camera3d = ["pinhole"];
-            let objects3d = ["voxel", "sdfcube", "sdfsphere"];
-            let layouts = ["grid3d"];
+            let camera3d = ["Pinhole"];
+            let layouts = ["Grid3D"];
             let mut consumed = false;
 
             if self.indent() == 0 {
 
                 if self.parser.current.kind == TokenType::Identifier {
-                    let idl = self.parser.current.lexeme.to_lowercase();
+                    let idl = self.parser.current.lexeme.clone();
                     let id = idl.as_str();
 
                     if camera3d.contains(&id){
+                        self.log(format!("Camera ({})", self.parser.current.lexeme));
                         self.camera3d(ctx);
                         consumed = true;
                     } else
-                    if objects3d.contains(&id){
+                    if self.objects3d.contains(&id.to_string()){
+                        self.log(format!("Object3D ({})", self.parser.current.lexeme));
                         self.object3d(ctx);
                         consumed = true;
                     } else
                     if layouts.contains(&id) {
+                        self.log(format!("Layout3D ({})", self.parser.current.lexeme));
                         self.layout3d(ctx);
                         consumed = true;
                     } else
-                    if id == "texture" {
-                        self.texture(ctx);
+                    if id == "Texture" {
+                        self.log(format!("Element2D ({})", self.parser.current.lexeme));
+                        self.element2d(ctx);
+                        consumed = true;
+                    }
+                }
+            } else {
+                if self.parser.current.kind == TokenType::Identifier {
+                    let idl = self.parser.current.lexeme.clone();
+
+                    if self.elements2d.contains(&idl) {
+                        self.log(format!("Element2D ({})", self.parser.current.lexeme));
+                        self.element2d(ctx);
                         consumed = true;
                     }
                 }
@@ -143,7 +206,6 @@ impl Compiler {
         let mut object : Option<Object> = None;
         let mut symbol : Option<char> = None;
 
-        self.debug_current();
         // if self.parser.current.lexeme == "Cube" {
         //     object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
         // }
@@ -170,46 +232,46 @@ impl Compiler {
 
         //self.consume(TokenType::Less, "Expected '<' after object identifier.");
 
-        let props = self.parse_object_properties();
+        let mut node = Node::new();
+        node.object = object.unwrap();
 
-        if let Some(object) = &mut object {
-            match object {
-                Object::AnalyticalObject(object) => {
-                    self.parser.error = object.apply_properties(props).err();
-                },
-                Object::SDF3D(sdf) => {
-                    self.parser.error = sdf.apply_properties(props).err();
-                },
-                _ => {},
-            }
+        let props = self.parse_object_properties(&mut node);
+
+        match &mut node.object {
+            Object::AnalyticalObject(object) => {
+                self.parser.error = object.apply_properties(props).err();
+            },
+            Object::SDF3D(sdf) => {
+                self.parser.error = sdf.apply_properties(props).err();
+            },
+            _ => {},
         }
+
 
         // Get the texture name if any
         let mut texture : Option<usize> = None;
 
-        if let Some(object) = &object {
-            match object {
-                Object::AnalyticalObject(object) => {
-                    if let Some(name) = object.get_engine().get_string("texture") {
-                        texture = self.get_texture_index(name, ctx);
-                    }
-                },
-                Object::SDF3D(sdf) => {
-                    if let Some(name) = sdf.get_engine().get_string("texture") {
-                        texture = self.get_texture_index(name, ctx);
-                    }
-                },
-                _ => {}
-            }
+        match &mut node.object {
+            Object::AnalyticalObject(object) => {
+                if let Some(name) = object.get_engine().get_string("texture") {
+                    texture = self.get_texture_index(name, ctx);
+                }
+            },
+            Object::SDF3D(sdf) => {
+                if let Some(name) = sdf.get_engine().get_string("texture") {
+                    texture = self.get_texture_index(name, ctx);
+                }
+            },
+            _ => {}
         }
 
-        let mut node = Node::new();
-        node.object = object.unwrap();
         node.texture = texture;
 
         if let Some(symbol) = symbol {
             ctx.symbols_node_index.insert(symbol, ctx.nodes.len());
         }
+
+        ctx.objects.push(ctx.nodes.len());
         ctx.nodes.push(node);
     }
 
@@ -307,20 +369,31 @@ impl Compiler {
     }
 
     /// Reads a texture
-    fn texture(&mut self, ctx: &mut Context) {
-        let mut object : Object = Object::Element2D(Box::new(Texture::new()));
+    fn element2d(&mut self, ctx: &mut Context) {
+        let mut object : Option<Object> = None;
 
-        self.advance();
-        let mut is_root = false;
+        let mut is_layout = false;
 
-        if self.check(TokenType::Star) {
-            is_root = true;
-            self.advance();
+        if self.parser.current.lexeme == "Texture" {
+            is_layout = true;
+            object = Some(Object::Element2D(Box::new(Texture::new())));
+        } else
+        if self.parser.current.lexeme == "Vertical" {
+            is_layout = true;
+            object = Some(Object::Element2D(Box::new(Vertical::new())));
+        } else
+        if self.parser.current.lexeme == "Color" {
+            object = Some(Object::Element2D(Box::new(ColorElement::new())));
         }
 
-        let props = self.parse_object_properties();
+        self.advance();
 
-        match &mut object {
+        let mut node = Node::new();
+        node.object = object.unwrap();
+
+        let props = self.parse_object_properties(&mut node);
+
+        match &mut node.object {
             Object::Element2D(texture) => {
                 self.parser.error = texture.apply_properties(props).err();
                 texture.render();
@@ -328,12 +401,20 @@ impl Compiler {
             _ => {}
         }
 
-        if is_root {
-            let mut node = Node::new();
-            node.object = object;
+        if is_layout {
+            let index = ctx.nodes.len();
             ctx.nodes.push(node);
-        } else {
-            ctx.textures.push(object);
+            if let Some(parent_index) = self.curr_parent {
+                ctx.nodes[parent_index].childs.push(index);
+            } else {
+                ctx.textures.push(index);
+            }
+            self.curr_parent = Some(index);
+        } else
+        if let Some(parent_index) = self.curr_parent {
+            let index = ctx.nodes.len();
+            ctx.nodes.push(node);
+            ctx.nodes[parent_index].elements.push(index);
         }
     }
 
@@ -343,7 +424,9 @@ impl Compiler {
 
         self.advance();
 
-        let props = self.parse_object_properties();
+        let mut node = Node::new();
+
+        let props = self.parse_object_properties(&mut node);
         self.parser.error = object.apply_properties(props).err();
 
         ctx.camera = object;
@@ -351,8 +434,8 @@ impl Compiler {
 
     /// Returns the index of the texture with the given name
     fn get_texture_index(&self, name: String, ctx: &mut Context) -> Option<usize> {
-        for (index, object) in ctx.textures.iter().enumerate() {
-            match object {
+        for (index, node_index) in ctx.textures.iter().enumerate() {
+            match &ctx.nodes[*node_index].object {
                 Object::Element2D(el) => {
                     //texture.alloc();
                     if let Some(rc) = el.get_engine().get_string("name") {
@@ -368,22 +451,87 @@ impl Compiler {
     }
 
     /// Parses the properties for the given object
-    fn parse_object_properties(&mut self) -> Vec<Property> {
+    fn parse_object_properties(&mut self, node: &mut Node) -> Vec<Property> {
 
-        //let object_line = self.parser.current.line;
-        //println!("object on line {}", object_line);
+        node.indention = self.parser.current.indent;
+        //println!("object on line {}", self.parser.current.line);
 
         let mut props : Vec<Property> = vec![];
 
         loop {
             let property = self.parser.current.lexeme.clone();
             let indention = self.parser.current.indent;
+
+            if self.elements2d.contains(&property) {
+                self.debug_current();
+                break;
+            }
+
             //let line = self.parser.current.line;
             self.consume(TokenType::Identifier, "Expected identifier.");
 
+            /*
+            // Is this a 2d layout or property ?
+            if self.elements2d.contains(&property) {
+
+                if node.get_node_type() != NodeType::Element2D {
+                    self.error_at_current("2D layout elements are only valid inside a texture");
+                    return props;
+                }
+
+                let mut element_is_layout = false;
+                let element2d = match property.as_str() {
+                    "vertical" => {
+                        element_is_layout = true;
+                        Object::Element2D(Box::new(Vertical::new()))
+                    }
+                    "color" => Object::Element2D(Box::new(Color::new())),
+                    _ => Object::Empty,
+                };
+
+                if element_is_layout {
+                    println!("add folder {} {}", self.indent(), property);
+
+                    // For layouts we create a child node
+                    let mut cnode = Node::new();
+                    self.parse_object_properties(&mut cnode);
+
+                    cnode.object = element2d;
+                    node.childs.push(cnode);
+                    self.debug_current();
+                } else {
+                    // Otherwise we add it as an element to the current
+
+                    let mut temp = Node::new();
+                    temp.object = element2d;
+
+                    self.parse_object_properties(&mut temp);
+
+                    println!("add element {} {}", self.indent(), property);
+                    node.elements.push(temp.object);
+                }
+
+                    //println!("continue {} {}", self.indent(), property);
+
+
+                // if self.objects3d.contains(&property) {
+                    //println!("continue {} {}", self.indent(), node.indention);
+
+                    //continue;
+                //}
+
+                if element_is_layout {
+                    continue;;
+                }
+
+
+                //println!("{:?}", node.childs.len());
+            }
+            */
+
             if self.check(TokenType::Equal) {
                 let value = self.scanner.scanline(1);
-                //println!("assignment, line {}: {} = {}", line, property, value);
+                println!("assignment, line {}: {} = {}", self.parser.current.line, property, value);
                 props.push(Property::Property(property, value));
                 self.advance();
                 if self.indent() == 0 {
@@ -415,95 +563,15 @@ impl Compiler {
                     props.push(Property::Function(property, args, code));
                 }
                 self.advance();
-                if self.indent() == 0 {
+                if self.indent() <= node.indention {
                     break;
                 }
-                self.debug_current();
             } else {
                 break;
             }
         }
 
         props
-
-        /*
-        if self.parser.current.kind != TokenType::Greater {
-            loop {
-                let key = self.parser.current.lexeme.clone().to_lowercase();
-
-                if self.check(TokenType::Slash) == true && self.scanner.peek() == b'>' {
-                    self.advance();
-                    self.advance();
-                    break;
-                }
-
-                self.consume(TokenType::Identifier, "Expected identifier after '<'.");
-                self.consume(TokenType::Colon, "Expected ':' after identifier.");
-
-                let mut value = "".to_string();
-
-                while (self.check(TokenType::Slash) == false && self.scanner.peek() != b'>') && !self.check(TokenType::Eof) {
-                    value += self.parser.current.lexeme.as_mut_str();
-                    self.advance_with_whitespace();
-                }
-
-                let code_blocks = ["update".to_string(), "shader".to_string()];
-
-                if code_blocks.contains(&key) {
-                    match object {
-                        Object::AnalyticalObject(analytical) => {
-                            analytical.set_code_block(key.clone(), value.clone());
-                        },
-                        Object::SDF3D(sdf) => {
-                            sdf.set_code_block(key.clone(), value.clone());
-                        },
-                        Object::Layout3D(layout) => {
-                            layout.set_code_block(key.clone(), value.clone());
-                        },
-                        Object::Element2D(element) => {
-                            element.set_code_block(key.clone(), value.clone());
-                        },
-                        Object::Camera3D(camera) => {
-                            camera.set_code_block(key.clone(), value.clone());
-                        },
-                        _ => {}
-                    }
-                } else {
-                    let code = format!("let {} = {}", key, value);
-                    match object {
-                        Object::AnalyticalObject(analytical) => {
-                            analytical.execute(code);
-                            analytical.update();
-                        },
-                        Object::SDF3D(sdf) => {
-                            sdf.execute(code);
-                        },
-                        Object::Layout3D(layout) => {
-                            layout.execute(code);
-                        },
-                        Object::Element2D(element) => {
-                            element.execute(code);
-                        },
-                        Object::Camera3D(camera) => {
-                            camera.execute(code);
-                        },
-                        _ => {}
-                    }
-                }
-
-                println!("{:?}, {:?}", key, value);
-                self.consume(TokenType::Slash, "Expected '/>' after object properties.");
-                self.consume(TokenType::Greater, "Expected '/>' after object properties.");
-
-                if self.parser.current.kind != TokenType::Less || self.parser.current.indent == 0 {
-                    break;
-                } else {
-                    self.advance();
-                }
-            }
-        } else {
-            self.advance();
-        }*/
     }
 
     /// Advance one token

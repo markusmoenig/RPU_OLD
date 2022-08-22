@@ -4,9 +4,13 @@ use crate::prelude::*;
 use rayon::{slice::ParallelSliceMut, iter::{IndexedParallelIterator, ParallelIterator}};
 
 pub struct Context {
-    pub textures                : Vec<Object>,
     pub nodes                   : Vec<Node>,
+
+    pub textures                : Vec<usize>,
+    pub objects                 : Vec<usize>,
+
     pub layouts                 : Vec<Object>,
+
     pub symbols_node_index      : HashMap<char, usize>,
 
     pub renderer                : Box<dyn Renderer>,
@@ -17,8 +21,9 @@ impl Context {
 
     pub fn new() -> Self {
         Self {
-            textures            : vec![],
             nodes               : vec![],
+            textures            : vec![],
+            objects             : vec![],
             layouts             : vec![],
             symbols_node_index  : HashMap::new(),
 

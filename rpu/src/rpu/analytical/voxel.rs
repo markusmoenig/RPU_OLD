@@ -18,7 +18,7 @@ impl Analytical for AnalyticalVoxel<'_> {
     }
 
     /// https://www.shadertoy.com/view/4d2XWV
-    fn get_distance(&self, ray: &[nalgebra::Vector3<F>; 2]) -> Option<F>{
+    fn get_distance(&self, _ray: &[nalgebra::Vector3<F>; 2]) -> Option<F>{
         Some(0.0)
     }
 }

@@ -148,7 +148,7 @@ impl<'sourcecode> Scanner {
             b'-' => self.make_token(TokenType::Minus),
             b'+' => self.make_token(TokenType::Plus),
             b'\'' => self.make_token(TokenType::Apostrophe),
-            b'#' => self.single_line_comment(),
+            b'/' if self.matches(b'/') => self.single_line_comment(),
             b'/' => self.make_token(TokenType::Slash),
             b'*' => self.make_token(TokenType::Star),
             b':' => self.make_token(TokenType::Colon),

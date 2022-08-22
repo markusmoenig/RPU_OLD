@@ -1,4 +1,6 @@
 pub mod texture;
+pub mod vertical;
+pub mod color;
 
 use crate::prelude::*;
 
