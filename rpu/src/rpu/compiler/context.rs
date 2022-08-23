@@ -15,6 +15,8 @@ pub struct Context {
 
     pub renderer                : Box<dyn Renderer>,
     pub camera                  : Box<dyn Camera3D>,
+
+    pub size                    : [usize; 2],
 }
 
 impl Context {
@@ -29,7 +31,23 @@ impl Context {
 
             renderer            : Box::new(Textured::new()),
             camera              : Box::new(Pinhole::new()),
+
+            size                : [0, 0],
         }
+    }
+
+    pub fn init(&mut self) {
+        // Render textures
+
+        /*
+        for node_index in &self.textures {
+            match &mut self.nodes[*node_index].object {
+                Object::Element2D(el) => {
+                    el.render(*node_index, &self);
+                },
+                _ => {}
+            }
+        }*/
     }
 
     pub fn update(&mut self) {
@@ -45,6 +63,7 @@ impl Context {
     }
 
     pub fn render_distributed(&mut self, color: &mut ColorBuffer<F>) {
+        self.size = color.size.clone();
         let [width, height] = color.size;
 
         self.update();
@@ -182,7 +201,9 @@ impl Context {
 
                 let xx = (*x as F / *width as F) - 0.5;
                 let yy = (*y as F / *height as F) - 0.5;
-                c = element.get_color_at(&[xx, -yy]);
+
+                let mut rect = UVRect::new(*size);
+                c = element.get_color_at(&[xx, -yy], &mut rect, 0, &self);
             },
             _ => {
                 c = self.renderer.render(ray, object, &self);

@@ -9,20 +9,20 @@ Texture
     name = "Disc"
     //size = F2(100.0, 100.0)
     Vertical
-        test = true
+        Color
+            color = F4(1.0)
+            shader(uv)
+                let d = length(uv) - 0.5;
+                let r = if d < 0.0 { 1.0 } else { 0.5 };
+                F4(r, 0.0, 0.0, 1.0)
+        Color
+            color = F4(0.0, 1.0, 0.0, 1.0)
 
         Color
-            color = true;
-
-//            shader(uv)
-//                let d = length(uv) - 0.5;
-//                let r = if d < 0.0 { 1.0 } else { 0.5 };
-//                F4(r, 0.0, 0.0, 1.0)
-        Color
-            color = true;
+            color = F4(1.0, 1.0, 0.0, 1.0)
 
 sdfCube'a
-    //texture = "Disc"
+    texture = "Disc"
     rotation = F3(0.0, 0.0, 0.0
     //position = F3(0.0, 0.0, 0.0)
     //update = rotation.y += 1.0

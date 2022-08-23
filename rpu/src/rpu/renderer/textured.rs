@@ -27,7 +27,7 @@ impl Renderer for Textured<'_> {
                             match &ctx.nodes[*texture_index].object {
                                 Object::Element2D(el) => {
                                     let uv = hit.uv;
-                                    c = el.get_color_at(&[uv.x, uv.y]);
+                                    c = el.get_color_at(&[uv.x, uv.y], &mut UVRect::new(ctx.size), *texture_index, ctx);
                                 },
                                 _ => {},
                             }

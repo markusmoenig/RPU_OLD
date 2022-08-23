@@ -49,6 +49,7 @@ pub mod prelude {
     pub use crate::rpu::renderer::Renderer;
     pub use crate::rpu::renderer::textured::Textured;
 
+    pub use crate::rpu::element2d::UVRect;
     pub use crate::rpu::element2d::texture::Texture;
     pub use crate::rpu::element2d::vertical::Vertical;
     pub use crate::rpu::element2d::color::ColorElement;

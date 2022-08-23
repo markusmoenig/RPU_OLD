@@ -99,6 +99,9 @@ impl Compiler {
             return Err(self.parser.error.clone().unwrap());
         }
 
+        // Initialize the context, like rendering static textures etc.
+        context.init();
+
         // Log the project structure
 
         struct StructureEnv { indent: u32 }
@@ -246,7 +249,6 @@ impl Compiler {
             },
             _ => {},
         }
-
 
         // Get the texture name if any
         let mut texture : Option<usize> = None;
@@ -396,7 +398,6 @@ impl Compiler {
         match &mut node.object {
             Object::Element2D(texture) => {
                 self.parser.error = texture.apply_properties(props).err();
-                texture.render();
             },
             _ => {}
         }

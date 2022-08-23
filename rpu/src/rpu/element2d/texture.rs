@@ -18,9 +18,10 @@ impl Element2D for Texture<'_> {
         }
     }
 
-    fn render(&mut self) {
-
+    fn render(&mut self, node_index: usize, ctx: &Context) {
         let static_size = self.engine.get_vector2("size");
+
+        let mut rect = UVRect::new(ctx.size);
 
         if let Some(static_size) = static_size {
             let width = static_size.x as usize;
@@ -34,7 +35,8 @@ impl Element2D for Texture<'_> {
 
                     let index = x * 4 + y * width * 4;
 
-                    let c = self.compute_color_at(&[uv_x, uv_y]);
+                    let mut c = [0.0, 0.0, 0.0, 1.0];
+                    self.compute_color_at(&[uv_x, uv_y], &mut c, &mut rect, node_index, ctx);
                     color.pixels[index..index+4].copy_from_slice(&c);
                 }
             }
@@ -43,7 +45,7 @@ impl Element2D for Texture<'_> {
         }
     }
 
-    fn get_color_at(&self, p: &[F; 2]) -> Color {
+    fn get_color_at(&self, p: &[F; 2], rect: &mut UVRect, node_index: usize, ctx: &Context) -> Color {
 
         if let Some(color) = &self.color {
             let [x, y] = p;
@@ -59,12 +61,23 @@ impl Element2D for Texture<'_> {
 
             return c;
         } else {
-            return self.compute_color_at(p);
+            let mut c = [0.0, 0.0, 0.0, 1.0];
+            self.compute_color_at(p, &mut c, rect, node_index, ctx);
+            return c;
         }
     }
 
-    fn compute_color_at(&self, p: &[F; 2]) -> Color {
-        self.engine.execute_shader(p)
+    fn compute_color_at(&self, p: &[F; 2], color: &mut Color, rect: &mut UVRect, node_index: usize, ctx: &Context) {
+
+        for child_index in &ctx.nodes[node_index].childs {
+            match &ctx.nodes[*child_index].object {
+                Object::Element2D(el) => el.compute_color_at(p, color, rect, *child_index, ctx),
+                _ => {},
+            }
+        }
+
+        //println!("dod, {}", ctx.nodes[node_index].childs.len());
+        //self.engine.execute_shader(p)
     }
 
     fn get_size(&self) -> [usize; 2]
