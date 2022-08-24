@@ -8,29 +8,17 @@ Pinhole
 Texture
     name = "Disc"
     //size = F2(100.0, 100.0)
-    Vertical
+    //Vertical
+    Bricks
+        test = true
 
-        Color
-            color = F4(1.0)
-
-        Color
-            color = F4(0.0, 1.0, 0.0, 1.0)
-
-        Color
-            color = F4(1.0, 1.0, 0.0, 1.0)
-
-            shader(uv, size)
-                let d = length(uv) - 0.5;
-                let r = if d < 0.0 { 1.0 } else { 0.0 };
-                F4(1.0, 0.0, 0.0, r)
-
-sdfCube'a
+Voxel'a
     texture = "Disc"
     rotation = F3(0.0, 0.0, 0.0
     //position = F3(0.0, 0.0, 0.0)
     //update = rotation.y += 1.0
 
-sdfCube'b
+Voxel'b
     texture = "Disc"
     radius = 0.5
 

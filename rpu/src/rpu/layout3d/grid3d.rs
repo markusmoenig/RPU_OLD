@@ -26,17 +26,21 @@ impl Layout3D for Grid3D<'_> {
 
     fn traverse3d(&self, ray: &Ray, get_normal: bool, ctx: &Context) -> Option<HitRecord> {
 
-        fn get_uv(hp: &Vector3<F>, mask: &GF3) -> Vector2<F> {
+        fn get_uv(hp: &Vector3<F>, mask: &GF3) -> (Vector2<F>, Vector2<F>) {
             let uv : Vector2<F>;
+            let uv_world : Vector2<F>;
             if mask.x > 0.5 {
                 uv = Vector2::new( (hp.z.abs()).fract() - 0.5, (hp.y.abs()).fract() - 0.5);
+                uv_world = Vector2::new(hp.z, hp.y);
             } else
             if mask.y > 0.5 {
                 uv = Vector2::new( (hp.x.abs()).fract() - 0.5, (hp.z.abs()).fract() - 0.5);
+                uv_world = Vector2::new(hp.x, hp.z);
             } else {
                 uv = Vector2::new( (hp.x.abs()).fract() - 0.5, (hp.y.abs()).fract() - 0.5);
+                uv_world = Vector2::new(hp.x, hp.y);
             }
-            uv
+            (uv, uv_world)
         }
 
         // Based on https://www.shadertoy.com/view/4dX3zl
@@ -86,14 +90,16 @@ impl Layout3D for Grid3D<'_> {
                             let d = object.get_distance(&p, &hp);
                             if d < 0.001 {
 
+                                let uv = get_uv(&p, &mask);
+
                                 return Some( HitRecord {
                                     distance        : dist,
                                     node            : index,
                                     hit_point       : p,
                                     mask            : mask,
                                     normal          : if get_normal { object.get_normal(&p, &hp) } else { Vector3::new(0.0, 0.0, 0.0) },
-                                    uv              : get_uv(&p, &mask),
-                                    face            : 0
+                                    uv              : uv.0,
+                                    uv_world        : uv.1,
                                 });
                             }
                             if t > t_max {
@@ -107,14 +113,16 @@ impl Layout3D for Grid3D<'_> {
                         if let Some(_d) = object.get_distance(ray) {
                             let hp = ro + rd * dist;
 
+                            let uv = get_uv(&hp, &mask);
+
                             return Some( HitRecord {
                                 distance        : dist,
                                 node            : index,
                                 hit_point       : hp,
                                 mask            : mask,
                                 normal          : Vector3::new(0.0, 0.0, 0.0),
-                                uv              : get_uv(&hp, &mask),
-                                face            : 0
+                                uv              : uv.0,
+                                uv_world        : uv.1,
                             });
                         }
                     }

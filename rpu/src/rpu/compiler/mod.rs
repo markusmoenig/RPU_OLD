@@ -72,7 +72,8 @@ impl Compiler {
             scanner         : Scanner::new("".to_string()),
             parser          : Parser::new(),
 
-            elements2d      : vec!["Texture".to_string(), "Vertical".to_string(), "Color".to_string()],
+            elements2d      : vec!["Texture".to_string(), "Vertical".to_string(), "Color".to_string(), "Noise".to_string(), "Bricks"
+            .to_string()],
             objects3d       : vec!["Voxel".to_string(), "sdfCube".to_string(), "sdfSphere".to_string()],
 
             curr_parent     : None,
@@ -386,7 +387,14 @@ impl Compiler {
         } else
         if self.parser.current.lexeme == "Color" {
             object = Some(Object::Element2D(Box::new(ColorElement::new())));
+        } else
+        if self.parser.current.lexeme == "Noise" {
+            object = Some(Object::Element2D(Box::new(Noise::new())));
+        } else
+        if self.parser.current.lexeme == "Bricks" {
+            object = Some(Object::Element2D(Box::new(Bricks::new())));
         }
+
 
         self.advance();
 

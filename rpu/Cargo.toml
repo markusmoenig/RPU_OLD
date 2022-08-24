@@ -14,3 +14,4 @@ rayon = "1.5.3"
 env_logger = "0.9"
 log = "0.4"
 rhai = { version = "*", default-features = false, features = ["sync", "only_i32"] }
+noise = "0.7.0"

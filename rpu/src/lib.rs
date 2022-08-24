@@ -64,6 +64,8 @@ pub mod prelude {
     pub use crate::rpu::element2d::texture::Texture;
     pub use crate::rpu::element2d::vertical::Vertical;
     pub use crate::rpu::element2d::color::ColorElement;
+    pub use crate::rpu::element2d::noise::Noise;
+    pub use crate::rpu::element2d::bricks::Bricks;
 
     pub use crate::rpu::hit::*;
 

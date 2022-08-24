@@ -33,7 +33,7 @@ impl Element2D for Texture<'_> {
 
                     let index = x * 4 + y * width * 4;
 
-                    let mut uv = UV::new(GF2::new(uv_x, uv_y), GF4::new(0.0, 0.0, ctx.size[0] as F, ctx.size[1] as F));
+                    let mut uv = UV::new(GF2::new(uv_x, uv_y), GF4::new(0.0, 0.0, ctx.size[0] as F, ctx.size[1] as F), GF2::new(uv_x, uv_y));
 
                     let mut c = GF4::new(0.0, 0.0, 0.0, 1.0);
                     self.compute_color_at(&mut uv, &mut c, node_index, ctx);
@@ -64,6 +64,13 @@ impl Element2D for Texture<'_> {
     fn compute_color_at(&self, uv: &UV, color: &mut GF4, node_index: usize, ctx: &Context) {
 
         for child_index in &ctx.nodes[node_index].childs {
+            match &ctx.nodes[*child_index].object {
+                Object::Element2D(el) => el.compute_color_at(uv, color, *child_index, ctx),
+                _ => {},
+            }
+        }
+
+        for child_index in &ctx.nodes[node_index].elements {
             match &ctx.nodes[*child_index].object {
                 Object::Element2D(el) => el.compute_color_at(uv, color, *child_index, ctx),
                 _ => {},

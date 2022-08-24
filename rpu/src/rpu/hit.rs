@@ -9,5 +9,5 @@ pub struct HitRecord {
      pub mask                 : GF3,
      /// Coordinates from -0.5..0.5
      pub uv                   : GF2,
-     pub face                 : u8
+     pub uv_world             : GF2,
 }

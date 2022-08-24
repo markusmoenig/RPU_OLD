@@ -202,7 +202,7 @@ impl Context {
                 let xx = (*x as F / *width as F) - 0.5;
                 let yy = (*y as F / *height as F) - 0.5;
 
-                let mut uv = UV::new(GF2::new(xx, -yy), GF4::new(0.0, 0.0, *width as F, *height as F));
+                let mut uv = UV::new(GF2::new(xx, -yy), GF4::new(0.0, 0.0, *width as F, *height as F), GF2::new(xx, -yy));
                 let v = element.get_color_at(&mut uv, 0, &self);
                 c[0] = v[0];
                 c[1] = v[1];

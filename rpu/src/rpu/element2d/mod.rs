@@ -1,6 +1,8 @@
 pub mod texture;
 pub mod vertical;
 pub mod color;
+pub mod noise;
+pub mod bricks;
 
 use crate::prelude::*;
 
@@ -18,14 +20,16 @@ pub trait Element2D : Sync + Send + Script {
 pub struct UV {
     pub p                   : GF2,
     pub rect                : GF4,
+    pub world               : GF2,
 }
 
 impl UV {
 
-    pub fn new(p: GF2, rect: GF4) -> Self {
+    pub fn new(p: GF2, rect: GF4, world: GF2) -> Self {
         Self {
             p,
             rect,
+            world,
         }
     }
 
@@ -42,7 +46,7 @@ impl UV {
         if px >= new_x && px <= new_x + new_width && py >= new_y && py <= new_y + new_height {
             let dx = (px - new_x) / new_width - 0.5;
             let dy = (py - new_y) / new_height - 0.5;
-            return Some(UV::new(GF2::new(dx, dy), GF4::new(new_x, new_y, new_width, new_height)));
+            return Some(UV::new(GF2::new(dx, dy), GF4::new(new_x, new_y, new_width, new_height), self.world));
         }
         None
     }
