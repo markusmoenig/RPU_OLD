@@ -30,3 +30,29 @@ RPU is meant as a tool for programmers and is not artist friendly by design. It 
 
 ## Examples
 
+Simple Dungeon
+
+```rust
+Pinhole
+    origin = F3(3.0, 0.5, 8.5)
+    center = F3(3.0, 0.4, 0.0)
+
+Texture
+    name = "Disc"
+    Bricks
+
+Voxel'a
+    texture = "Disc"
+    rotation = F3(0.0, 0.0, 0.0)
+
+Grid3D
+:    a
+:aaa a
+:
+: a  a
+: a  a
+: a  a
+```
+
+![Dungeon](images/dungeon.png)
+
