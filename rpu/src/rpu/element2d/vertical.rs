@@ -15,26 +15,25 @@ impl Element2D for Vertical<'_> {
         }
     }
 
-    fn compute_color_at(&self, p: &[F; 2], color: &mut Color, rect: &mut UVRect, node_index: usize, ctx: &Context) {
-        //println!("{}", ctx.nodes[node_index].elements.len());
+    fn compute_color_at(&self, uv: &UV, color: &mut GF4, node_index: usize, ctx: &Context) {
         let v_el_size = 1.0 / ctx.nodes[node_index].elements.len() as F;
-        //self.engine.execute_shader(p)
-
         let mut y = 0.0;
         for child_index in &ctx.nodes[node_index].elements {
             match &ctx.nodes[*child_index].object {
 
                 Object::Element2D(el) => {
 
-                    let el_rect = [0.0, y, 1.0, v_el_size];
-                    if let Some(sub) = rect.create_from(*p, el_rect) {
-                        el.compute_color_at(p, color, rect, *child_index, ctx);
+                    let el_rect = GF4::new(0.0, y, 1.0, v_el_size);
+                    if let Some(sub) = uv.create_sub(el_rect) {
+                        el.compute_color_at(&sub, color, *child_index, ctx);
                     }
                     y += v_el_size;
                 },
                 _ => {},
             }
         }
+
+        self.engine.execute_shader(uv, color);
     }
 }
 

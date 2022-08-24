@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub struct ColorElement<'a> {
     engine                  : ScriptEngine<'a>,
-    color                   : Vector4<F>,
+    color                   : GF4,
 }
 
 impl Element2D for ColorElement<'_> {
@@ -16,12 +16,9 @@ impl Element2D for ColorElement<'_> {
         }
     }
 
-    fn compute_color_at(&self, p: &[F; 2], color: &mut Color, rect: &mut UVRect, node: usize, ctx: &Context) {
-        color[0] = self.color.x;
-        color[1] = self.color.y;
-        color[2] = self.color.z;
-        color[3] = self.color.w;
-        //self.engine.execute_shader(p)
+    fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, _ctx: &Context) {
+        *color = self.color;
+        self.engine.execute_shader(uv, color);
     }
 }
 

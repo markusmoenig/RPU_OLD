@@ -16,7 +16,7 @@ pub trait Script : Sync + Send {
 // F2
 #[derive(PartialEq, Debug, Clone)]
 pub struct F2 {
-    pub value               : Vector2<F>
+    pub value               : GF2
 }
 
 impl F2 {
@@ -29,13 +29,13 @@ impl F2 {
 
     pub fn new_1(x: F) -> Self {
         Self {
-            value           : Vector2::new(x, x)
+            value           : GF2::new(x, x)
         }
     }
 
     pub fn new_2(x: F, y: F) -> Self {
         Self {
-            value           : Vector2::new(x, y),
+            value           : GF2::new(x, y),
         }
     }
 
@@ -65,12 +65,12 @@ impl FuncArgs for F2 {
 // F3
 #[derive(PartialEq, Debug, Clone)]
 pub struct F3 {
-    pub value               : Vector3<F>
+    pub value               : GF3
 }
 
 impl F3 {
 
-    pub fn new(v: Vector3<F>) -> Self {
+    pub fn new(v: GF3) -> Self {
         Self {
             value           : v,
         }
@@ -78,13 +78,13 @@ impl F3 {
 
     pub fn new_1(x: F) -> Self {
         Self {
-            value           : Vector3::new(x, x, x)
+            value           : GF3::new(x, x, x)
         }
     }
 
     pub fn new_3(x: F, y: F, z: F) -> Self {
         Self {
-            value           : Vector3::new(x, y, z),
+            value           : GF3::new(x, y, z),
         }
     }
 
@@ -116,7 +116,7 @@ impl F3 {
 // F4
 #[derive(PartialEq, Debug, Clone)]
 pub struct F4 {
-    pub value               : Vector4<F>
+    pub value               : GF4
 }
 
 impl F4 {
@@ -129,13 +129,13 @@ impl F4 {
 
     pub fn new_1(x: F) -> Self {
         Self {
-            value           : Vector4::new(x, x, x, x)
+            value           : GF4::new(x, x, x, x)
         }
     }
 
     pub fn new_4(x: F, y: F, z: F, w: F) -> Self {
         Self {
-            value           : Vector4::new(x, y, z, w),
+            value           : GF4::new(x, y, z, w),
         }
     }
 

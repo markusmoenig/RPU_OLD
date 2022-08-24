@@ -6,12 +6,23 @@ pub use crate::rpu::buffer::Buffer as Buffer;
 extern crate nalgebra_glm as glm;
 
 pub type I = i32;
-pub type F = f32;
+pub type F = f64;
+pub type GF2 = glm::DVec2;
+pub type GF3 = glm::DVec3;
+pub type GF4 = glm::DVec4;
+
 pub type Color = [F; 4];
 
 pub mod prelude {
     pub use nalgebra::*;
     pub use crate::rpu::RPU;
+
+    pub use crate::I;
+    pub use crate::F;
+    pub use crate::GF2;
+    pub use crate::GF3;
+    pub use crate::GF4;
+    pub use crate::Color;
 
     pub use crate::rpu::buffer::Buffer;
     pub use crate::rpu::buffer::ColorBuffer;
@@ -49,16 +60,12 @@ pub mod prelude {
     pub use crate::rpu::renderer::Renderer;
     pub use crate::rpu::renderer::textured::Textured;
 
-    pub use crate::rpu::element2d::UVRect;
+    pub use crate::rpu::element2d::UV;
     pub use crate::rpu::element2d::texture::Texture;
     pub use crate::rpu::element2d::vertical::Vertical;
     pub use crate::rpu::element2d::color::ColorElement;
 
     pub use crate::rpu::hit::*;
-
-    pub use crate::I;
-    pub use crate::F;
-    pub use crate::Color;
 
     pub use std::path::PathBuf;
     pub use std::collections::HashMap;

@@ -15,8 +15,8 @@ impl Renderer for Textured<'_> {
         }
     }
 
-    fn render(&self, ray: &Ray, object: &Object, ctx: &Context) -> Color {
-        let mut c = [0.0, 0.0, 0.0, 1.0];
+    fn render(&self, ray: &Ray, object: &Object, ctx: &Context) -> GF4 {
+        let mut c = GF4::new(0.0, 0.0, 0.0, 1.0);
 
             match object {
                 Object::Layout3D(layout) => {
@@ -26,8 +26,10 @@ impl Renderer for Textured<'_> {
                         if let Some(texture_index) = &ctx.nodes[hit.node].texture {
                             match &ctx.nodes[*texture_index].object {
                                 Object::Element2D(el) => {
-                                    let uv = hit.uv;
-                                    c = el.get_color_at(&[uv.x, uv.y], &mut UVRect::new(ctx.size), *texture_index, ctx);
+                                    let p = hit.uv;
+
+                                    let mut uv = UV::new(p, GF4::new(0.0, 0.0, ctx.size[0] as F, ctx.size[1] as F));
+                                    c = el.get_color_at(&mut uv, *texture_index, ctx);
                                 },
                                 _ => {},
                             }

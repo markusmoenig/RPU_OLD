@@ -26,7 +26,7 @@ impl SDF3D for SDF3DCube<'_> {
         let size = self.engine.get_vector3("size").unwrap();
         //let rotation = self.engine.get_vector3("rotation").unwrap();
 
-        let q : glm::Vec3 = glm::convert((x - position - instance).abs() - size);
+        let q : GF3 = glm::convert((x - position - instance).abs() - size);
         glm::length(&glm::max(&q, 0.0)) + q.x.max(q.y.max(q.z)).min(0.0)
 
         //vec3 q = abs(p) - b;

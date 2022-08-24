@@ -26,7 +26,7 @@ impl Layout3D for Grid3D<'_> {
 
     fn traverse3d(&self, ray: &Ray, get_normal: bool, ctx: &Context) -> Option<HitRecord> {
 
-        fn get_uv(hp: &Vector3<F>, mask: &glm::Vec3) -> Vector2<F> {
+        fn get_uv(hp: &Vector3<F>, mask: &GF3) -> Vector2<F> {
             let uv : Vector2<F>;
             if mask.x > 0.5 {
                 uv = Vector2::new( (hp.z.abs()).fract() - 0.5, (hp.y.abs()).fract() - 0.5);
@@ -43,27 +43,27 @@ impl Layout3D for Grid3D<'_> {
 
         let [ro, rd] = &ray;
 
-        let ray_origin = glm::floor(&glm::Vec3::new(ro.x, ro.y, ro.z));
-        let ray_dir = glm::Vec3::new(rd.x, rd.y, rd.z);
+        let ray_origin = glm::floor(&GF3::new(ro.x, ro.y, ro.z));
+        let ray_dir = GF3::new(rd.x, rd.y, rd.z);
 
 	    // ivec3 mapPos = ivec3(floor(rayPos + 0.));
         let mut map_pos = glm::IVec3::new(ray_origin.x as i32, ray_origin.y as i32, ray_origin.z as i32);
 
         // vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
         let lrd = glm::length(&ray_dir);
-	    let delta_dist = glm::abs(&glm::Vec3::new(lrd / ray_dir.x, lrd / ray_dir.y, lrd / ray_dir.z));
+	    let delta_dist = glm::abs(&GF3::new(lrd / ray_dir.x, lrd / ray_dir.y, lrd / ray_dir.z));
 
     	// ivec3 rayStep = ivec3(sign(rayDir));
 	    let sign_ray_step = glm::sign(&ray_dir);
         let ray_step = glm::IVec3::new(sign_ray_step.x as i32, sign_ray_step.y as i32, sign_ray_step.z as i32);
 
 	    // vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
-        let mut side_dist = glm::Vec3::new(0.0, 0.0, 0.0);
-        side_dist.x = (rd.x.signum() * (map_pos.x as f32 - ro.x) + (rd.x.signum() * 0.5) + 0.5) * delta_dist.x;
-        side_dist.y = (rd.y.signum() * (map_pos.y as f32 - ro.y) + (rd.y.signum() * 0.5) + 0.5) * delta_dist.y;
-        side_dist.z = (rd.z.signum() * (map_pos.z as f32 - ro.z) + (rd.z.signum() * 0.5) + 0.5) * delta_dist.z;
+        let mut side_dist = GF3::new(0.0, 0.0, 0.0);
+        side_dist.x = (rd.x.signum() * (map_pos.x as F - ro.x) + (rd.x.signum() * 0.5) + 0.5) * delta_dist.x;
+        side_dist.y = (rd.y.signum() * (map_pos.y as F - ro.y) + (rd.y.signum() * 0.5) + 0.5) * delta_dist.y;
+        side_dist.z = (rd.z.signum() * (map_pos.z as F - ro.z) + (rd.z.signum() * 0.5) + 0.5) * delta_dist.z;
 
-        let mut mask = glm::Vec3::new(0.0, 0.0, 0.0);
+        let mut mask = GF3::new(0.0, 0.0, 0.0);
 
         for _i in 0..14 {
             if map_pos.x < 0 || map_pos.y < 0 || map_pos.z < 0 { continue; }
@@ -73,7 +73,7 @@ impl Layout3D for Grid3D<'_> {
                 let dx = mask.x * (side_dist.x - delta_dist.x);
                 let dy = mask.y * (side_dist.y - delta_dist.y);
                 let dz = mask.z * (side_dist.z - delta_dist.z);
-                let dist = glm::length(&glm::Vec3::new(dx, dy, dz));
+                let dist = glm::length(&GF3::new(dx, dy, dz));
 
                 match &ctx.nodes[index].object {
 
@@ -126,21 +126,21 @@ impl Layout3D for Grid3D<'_> {
 				if side_dist.x < side_dist.z {
 					side_dist.x += delta_dist.x;
 					map_pos.x += ray_step.x;
-					mask = glm::Vec3::new(1.0, 0.0, 0.0);
+					mask = GF3::new(1.0, 0.0, 0.0);
 				} else {
 					side_dist.z += delta_dist.z;
 					map_pos.z += ray_step.z;
-					mask = glm::Vec3::new(0.0, 0.0, 1.0);
+					mask = GF3::new(0.0, 0.0, 1.0);
 				}
 			} else {
 				if side_dist.y < side_dist.z {
 					side_dist.y += delta_dist.y;
 					map_pos.y += ray_step.y;
-					mask = glm::Vec3::new(0.0, 1.0, 0.0);
+					mask = GF3::new(0.0, 1.0, 0.0);
 				} else {
 					side_dist.z += delta_dist.z;
 					map_pos.z += ray_step.z;
-					mask = glm::Vec3::new(0.0, 0.0, 1.0);
+					mask = GF3::new(0.0, 0.0, 1.0);
 				}
 			}
         }

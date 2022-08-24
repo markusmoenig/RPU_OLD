@@ -109,28 +109,21 @@ impl ScriptEngine<'_> {
         //println!("{:?}", rc);
     }
 
-    pub fn execute_shader(&self, uv: &[F; 2]) -> Color {
-        let mut color = [0.0, 0.0, 0.0, 1.0];
-
-        let mut scope = Scope::new();
-        scope.set_value("uv", F2::new_2(uv[0], uv[1]));
+    pub fn execute_shader(&self, uv: &UV, color: &mut GF4) {
 
         if let Some(ast) = &self.shader {
-            let v = F2::new_2(uv[0], uv[1]);
-            let rc = self.engine.call_fn::<F4>(&mut scope, &ast, "shader", (v,));
+
+            let mut scope = Scope::new();
+            let rc = self.engine.call_fn::<F4>(&mut scope, &ast, "shader", (F2::new(uv.p),F2::new_2(uv.rect[2], uv.rect[3]),));
 
             if rc.is_ok() {
                 if let Some(out) = rc.ok() {
-                    color[0] = out.value.x;
-                    color[1] = out.value.y;
-                    color[2] = out.value.z;
-                    color[3] = out.value.w;
+                    *color = glm::mix(&color, &out.value, out.value.w);
                 }
             } else {
                 println!("{:?}", rc);
             }
         }
-        color
     }
 
     pub fn execute_block(&mut self, name: String) -> bool {

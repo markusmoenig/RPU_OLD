@@ -9,17 +9,20 @@ Texture
     name = "Disc"
     //size = F2(100.0, 100.0)
     Vertical
+
         Color
             color = F4(1.0)
-            shader(uv)
-                let d = length(uv) - 0.5;
-                let r = if d < 0.0 { 1.0 } else { 0.5 };
-                F4(r, 0.0, 0.0, 1.0)
+
         Color
             color = F4(0.0, 1.0, 0.0, 1.0)
 
         Color
             color = F4(1.0, 1.0, 0.0, 1.0)
+
+            shader(uv, size)
+                let d = length(uv) - 0.5;
+                let r = if d < 0.0 { 1.0 } else { 0.0 };
+                F4(1.0, 0.0, 0.0, r)
 
 sdfCube'a
     texture = "Disc"
@@ -27,7 +30,8 @@ sdfCube'a
     //position = F3(0.0, 0.0, 0.0)
     //update = rotation.y += 1.0
 
-sdfSphere'b
+sdfCube'b
+    texture = "Disc"
     radius = 0.5
 
 Grid3D

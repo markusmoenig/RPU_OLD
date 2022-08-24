@@ -6,8 +6,8 @@ pub struct HitRecord {
      pub node                 : usize,
      pub normal               : Vector3<F>,
      pub hit_point            : Vector3<F>,
-     pub mask                 : glm::Vec3,
+     pub mask                 : GF3,
      /// Coordinates from -0.5..0.5
-     pub uv                   : Vector2<F>,
+     pub uv                   : GF2,
      pub face                 : u8
 }
