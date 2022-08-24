@@ -1404,6 +1404,7 @@ dependencies = [
  "env_logger",
  "log",
  "pixels",
+ "png 0.17.5",
  "rpu",
  "winit",
  "winit_input_helper",

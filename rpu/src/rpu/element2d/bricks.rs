@@ -54,7 +54,7 @@ impl Element2D for Bricks<'_> {
         //    isMissing = true
         //}
 
-        *color = GF4::new(m, m, m, m);
+        *color = GF4::new(m, m, m, 1.0);
         self.engine.execute_shader(uv, color);
     }
 }
