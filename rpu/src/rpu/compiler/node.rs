@@ -13,24 +13,27 @@ use NodeType::*;
 
 pub struct Node {
 
+    pub id                  : String,
     pub childs              : Vec<usize>,
     pub elements            : Vec<usize>,
 
     pub object              : Object,
     pub texture             : Option<usize>,
-    pub indention           : usize,
+
+    pub indent              : usize,
 }
 
 impl Node {
 
-    pub fn new() -> Self {
+    pub fn new(id: String) -> Self {
         Self {
+            id,
             childs          : vec![],
             elements        : vec![],
 
             object          : Object::Empty,
             texture         : None,
-            indention       : 0
+            indent          : 0
         }
     }
 

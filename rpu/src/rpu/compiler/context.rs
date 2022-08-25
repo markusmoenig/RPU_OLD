@@ -8,6 +8,7 @@ pub struct Context {
 
     pub textures                : Vec<usize>,
     pub objects                 : Vec<usize>,
+    pub sprites                 : Vec<Box<dyn Element2D>>,
 
     pub layouts                 : Vec<Object>,
 
@@ -24,8 +25,11 @@ impl Context {
     pub fn new() -> Self {
         Self {
             nodes               : vec![],
+
             textures            : vec![],
             objects             : vec![],
+            sprites             : vec![],
+
             layouts             : vec![],
             symbols_node_index  : HashMap::new(),
 

@@ -180,6 +180,11 @@ impl Compiler {
                         self.log(format!("Element2D ({})", self.parser.current.lexeme));
                         self.element2d(ctx);
                         consumed = true;
+                    } else
+                    if id == "Sprite" {
+                        self.log(format!("Sprite ({})", self.parser.current.lexeme));
+                        self.sprite(ctx);
+                        consumed = true;
                     }
                 }
             } else {
@@ -213,15 +218,17 @@ impl Compiler {
         // if self.parser.current.lexeme == "Cube" {
         //     object = Some(Object::AnalyticalObject(Box::new(AnalyticalCube::new())));
         // }
-        if self.parser.current.lexeme.to_lowercase() == "voxel" {
+        if self.parser.current.lexeme == "Voxel" {
             object = Some(Object::AnalyticalObject(Box::new(AnalyticalVoxel::new())));
         } else
-        if self.parser.current.lexeme.to_lowercase() == "sdfcube" {
+        if self.parser.current.lexeme == "sdfCube" {
             object = Some(Object::SDF3D(Box::new(SDF3DCube::new())));
         } else
-        if self.parser.current.lexeme.to_lowercase() == "sdfsphere" {
+        if self.parser.current.lexeme == "sdfSphere" {
             object = Some(Object::SDF3D(Box::new(SDF3DSphere::new())));
         }
+
+        let mut node = Node::new(format!("{}, line {}", self.parser.current.lexeme, self.parser.current.line));
 
         self.advance();
 
@@ -234,9 +241,6 @@ impl Compiler {
             }
         }
 
-        //self.consume(TokenType::Less, "Expected '<' after object identifier.");
-
-        let mut node = Node::new();
         node.object = object.unwrap();
 
         let props = self.parse_object_properties(&mut node);
@@ -257,12 +261,14 @@ impl Compiler {
         match &mut node.object {
             Object::AnalyticalObject(object) => {
                 if let Some(name) = object.get_engine().get_string("texture") {
-                    texture = self.get_texture_index(name, ctx);
+                    texture = self.get_texture_index(name.clone(), ctx);
+                    println!("result {}, {:?}", name, texture);
                 }
             },
             Object::SDF3D(sdf) => {
                 if let Some(name) = sdf.get_engine().get_string("texture") {
-                    texture = self.get_texture_index(name, ctx);
+                    texture = self.get_texture_index(name.clone(), ctx);
+                    println!("result {}, {:?}", name, texture);
                 }
             },
             _ => {}
@@ -302,15 +308,11 @@ impl Compiler {
             }
         }
 
-        //self.consume(TokenType::Less, "Expected '<' after object identifier.");
-
         if let Some(object) = &mut object {
-            //self.parse_object_properties(object);
-
             let mut map : HashMap<(i32, i32, i32), usize> = HashMap::new();
 
             let mut x = 0;
-            let y = 0;
+            let mut y = 0;
             let mut z = 0;
 
             let mut first = true;
@@ -318,7 +320,18 @@ impl Compiler {
             loop {
                 if self.check(TokenType::Colon) {
 
+                    let line = self.parser.current.line;
+                    let mut count = 0;
+
                     while self.check(TokenType::Colon) {
+
+                        // Next level up
+                        if count > 0 && self.parser.current.line == line {
+                            y += 1;
+                            x = 0;
+                            z = 0;
+                        }
+
                         // Next line
                         if first == true {
                             first = false;
@@ -327,8 +340,8 @@ impl Compiler {
                             x = 0;
                         }
                         self.advance_with_whitespace();
+                        count += 1;
                     }
-                    //self.consume_with_whitespace(TokenType::Space, "Expect ' ' after colon.");
                 } else
                 if self.check(TokenType::Space) {
                     x += 1;
@@ -371,7 +384,7 @@ impl Compiler {
         ctx.layouts.push(object.unwrap());
     }
 
-    /// Reads a texture
+    /// Reads a texture or 2d element
     fn element2d(&mut self, ctx: &mut Context) {
         let mut object : Option<Object> = None;
 
@@ -395,11 +408,20 @@ impl Compiler {
             object = Some(Object::Element2D(Box::new(Bricks::new())));
         }
 
+        let mut node = Node::new(format!("{}, line {}", self.parser.current.lexeme, self.parser.current.line));
+        node.object = object.unwrap();
+
+        if self.parser.current.indent == 0 {
+            self.curr_parent = None;
+        }
+
+        // if let Some(parent_index) = self.curr_parent {
+        //     if ctx.nodes[parent_index].indent < self.parser.current.indent {
+        //         self.curr_parent = None;
+        //     }
+        // }
 
         self.advance();
-
-        let mut node = Node::new();
-        node.object = object.unwrap();
 
         let props = self.parse_object_properties(&mut node);
 
@@ -417,6 +439,7 @@ impl Compiler {
                 ctx.nodes[parent_index].childs.push(index);
             } else {
                 ctx.textures.push(index);
+                println!("Added as texture: {}", self.get_name_of_object(&ctx.nodes[index].object));
             }
             self.curr_parent = Some(index);
         } else
@@ -424,16 +447,37 @@ impl Compiler {
             let index = ctx.nodes.len();
             ctx.nodes.push(node);
             ctx.nodes[parent_index].elements.push(index);
+            println!("Added {}({}) to: {}({})", self.get_name_of_object(&ctx.nodes[index].object), index, self.get_name_of_object(&ctx.nodes[parent_index].object), parent_index);
         }
+        //self.debug_current("end of texture");
+    }
+
+    /// Reads a sprite, a special case Element2D
+    fn sprite(&mut self, ctx: &mut Context) {
+        let mut object = Box::new(Sprite::new());
+
+        let mut node = Node::new(format!("{}, line {}", self.parser.current.lexeme, self.parser.current.line));
+
+        self.advance();
+
+        let props = self.parse_object_properties(&mut node);
+        self.parser.error = object.apply_properties(props).err();
+
+        let mut texture : Option<usize> = None;
+        if let Some(name) = object.get_engine().get_string("texture") {
+            texture = self.get_texture_index(name.clone(), ctx);
+        }
+        object.texture = texture;
+        ctx.sprites.push(object);
     }
 
     /// Reads a camera
     fn camera3d(&mut self, ctx: &mut Context) {
         let mut object = Box::new(Pinhole::new());
 
-        self.advance();
+        let mut node = Node::new(format!("{}, line {}", self.parser.current.lexeme, self.parser.current.line));
 
-        let mut node = Node::new();
+        self.advance();
 
         let props = self.parse_object_properties(&mut node);
         self.parser.error = object.apply_properties(props).err();
@@ -449,7 +493,7 @@ impl Compiler {
                     //texture.alloc();
                     if let Some(rc) = el.get_engine().get_string("name") {
                         if rc == name {
-                            return Some(index)
+                            return Some(ctx.textures[index])
                         }
                     }
                 },
@@ -462,7 +506,7 @@ impl Compiler {
     /// Parses the properties for the given object
     fn parse_object_properties(&mut self, node: &mut Node) -> Vec<Property> {
 
-        node.indention = self.parser.current.indent;
+        node.indent = self.parser.current.indent;
         //println!("object on line {}", self.parser.current.line);
 
         let mut props : Vec<Property> = vec![];
@@ -471,76 +515,16 @@ impl Compiler {
             let property = self.parser.current.lexeme.clone();
             let indention = self.parser.current.indent;
 
-            if self.elements2d.contains(&property) {
-                self.debug_current();
+            if self.elements2d.contains(&property) || self.objects3d.contains(&property) || self.parser.current.indent < node.indent {
+                self.debug_current(format!("prop break for {}", node.id).as_str());
                 break;
             }
 
-            //let line = self.parser.current.line;
             self.consume(TokenType::Identifier, "Expected identifier.");
-
-            /*
-            // Is this a 2d layout or property ?
-            if self.elements2d.contains(&property) {
-
-                if node.get_node_type() != NodeType::Element2D {
-                    self.error_at_current("2D layout elements are only valid inside a texture");
-                    return props;
-                }
-
-                let mut element_is_layout = false;
-                let element2d = match property.as_str() {
-                    "vertical" => {
-                        element_is_layout = true;
-                        Object::Element2D(Box::new(Vertical::new()))
-                    }
-                    "color" => Object::Element2D(Box::new(Color::new())),
-                    _ => Object::Empty,
-                };
-
-                if element_is_layout {
-                    println!("add folder {} {}", self.indent(), property);
-
-                    // For layouts we create a child node
-                    let mut cnode = Node::new();
-                    self.parse_object_properties(&mut cnode);
-
-                    cnode.object = element2d;
-                    node.childs.push(cnode);
-                    self.debug_current();
-                } else {
-                    // Otherwise we add it as an element to the current
-
-                    let mut temp = Node::new();
-                    temp.object = element2d;
-
-                    self.parse_object_properties(&mut temp);
-
-                    println!("add element {} {}", self.indent(), property);
-                    node.elements.push(temp.object);
-                }
-
-                    //println!("continue {} {}", self.indent(), property);
-
-
-                // if self.objects3d.contains(&property) {
-                    //println!("continue {} {}", self.indent(), node.indention);
-
-                    //continue;
-                //}
-
-                if element_is_layout {
-                    continue;;
-                }
-
-
-                //println!("{:?}", node.childs.len());
-            }
-            */
 
             if self.check(TokenType::Equal) {
                 let value = self.scanner.scanline(1);
-                println!("assignment, line {}: {} = {}", self.parser.current.line, property, value);
+                println!("assignment to {:?}, line {}: {} = {}", node.id, self.parser.current.line, property, value);
                 props.push(Property::Property(property, value));
                 self.advance();
                 if self.indent() == 0 {
@@ -572,15 +556,24 @@ impl Compiler {
                     props.push(Property::Function(property, args, code));
                 }
                 self.advance();
-                if self.indent() <= node.indention {
+                if self.indent() <= node.indent {
                     break;
                 }
             } else {
                 break;
             }
         }
-
         props
+    }
+
+    /// Returns the name of an object
+    fn get_name_of_object(&self, object: &Object) -> String {
+        match object {
+            Object::Element2D(el) => {
+                el.name()
+            },
+            _ => { "??".to_string() }
+        }
     }
 
     /// Advance one token
@@ -610,8 +603,8 @@ impl Compiler {
     }
 
     /// Prints the current Token.
-    fn debug_current(&mut self) {
-        println!("Debug {:?}", self.parser.current);
+    fn debug_current(&mut self, msg: &str) {
+        println!("{} {:?}", msg, self.parser.current);
     }
 
     /// Consume the current token if the type matches

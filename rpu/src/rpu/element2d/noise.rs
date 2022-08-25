@@ -3,6 +3,7 @@ use crate::prelude::*;
 pub struct Noise<'a> {
     engine                  : ScriptEngine<'a>,
     color                   : GF4,
+    scale                   : GF2,
 }
 
 impl Element2D for Noise<'_> {
@@ -12,17 +13,26 @@ impl Element2D for Noise<'_> {
 
         Self {
             engine,
-            color           : Vector4::new(0.0, 0.0, 0.0, 1.0),
+            color           : Vector4::new(1.0, 1.0, 1.0, 1.0),
+            scale           : GF2::new(1.0, 1.0),
         }
+    }
+
+    fn name(&self) -> String {
+        "Noise".to_string()
     }
 
     fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, _ctx: &Context) {
         use noise::{NoiseFn, Perlin};
 
         let value = Perlin::new();
-        let v = value.get([uv.world.x * 20.0, uv.world.y * 20.0]);
+        let v = value.get([uv.world.x * 20.0 / self.scale.x, uv.world.y * 20.0 / self.scale.y]);
 
-        *color = GF4::new(v, v, v, v);
+        //println!("{}", v);
+        *color = glm::mix(&color, &self.color, (self.color.w * (v / 2.0 + 0.5)).clamp(0.0, 1.0));
+
+        //*color = GF4::new(v, v, v, v);
+
         self.engine.execute_shader(uv, color);
     }
 }
@@ -41,6 +51,9 @@ impl Script for Noise<'_> {
         let rc = self.engine.apply_properties(props);
         if let Some(color) = self.engine.get_vector4("color") {
             self.color = color;
+        }
+        if let Some(scale) = self.engine.get_vector2("scale") {
+            self.scale = scale;
         }
         rc
     }

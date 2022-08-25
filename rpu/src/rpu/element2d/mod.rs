@@ -3,6 +3,7 @@ pub mod vertical;
 pub mod color;
 pub mod noise;
 pub mod bricks;
+pub mod sprite;
 
 use crate::prelude::*;
 
@@ -10,11 +11,17 @@ use crate::prelude::*;
 pub trait Element2D : Sync + Send + Script {
     fn new() -> Self where Self: Sized;
 
+    fn name(&self) -> String {"".to_string()}
     fn render(&mut self, node: usize, ctx: &Context) {}
 
     fn get_color_at(&self, uv: &UV, node: usize, ctx: &Context) -> GF4 { GF4::new(0.0, 0.0, 0.0, 1.0) }
     fn compute_color_at(&self, uv: &UV, color: &mut GF4, node: usize, ctx: &Context);
     fn get_size(&self) -> [usize; 2] { [0, 0] }
+
+    // For sprites
+
+    fn get_position(&self) -> Option<GF3> { None }
+    fn get_texture(&self) -> Option<usize> { None }
 }
 
 pub struct UV {
@@ -49,5 +56,19 @@ impl UV {
             return Some(UV::new(GF2::new(dx, dy), GF4::new(new_x, new_y, new_width, new_height), self.world));
         }
         None
+    }
+
+    pub fn pixelate(&self, v: F) -> UV {
+
+        let r = (self.rect[2] / self.rect[3]) * (100.0 - v);
+        let pixel_size = GF2::new(r, r);
+
+        let mut n = UV::new(self.p, self.rect, self.world);
+
+        n.p = glm::floor(&self.p.component_mul(&pixel_size)).component_div(&pixel_size);
+        n.world = glm::floor(&self.world.component_mul(&pixel_size)).component_div(&pixel_size);
+        //rc.x += 1.0 / (pixel_size.x * 2.0);
+        //rc.y += 1.0 / (pixel_size.y * 2.0);
+        n
     }
 }

@@ -26,6 +26,7 @@ impl Renderer for Textured<'_> {
                         if let Some(texture_index) = &ctx.nodes[hit.node].texture {
                             match &ctx.nodes[*texture_index].object {
                                 Object::Element2D(el) => {
+
                                     let p = hit.uv;
 
                                     let mut uv = UV::new(p, GF4::new(0.0, 0.0, ctx.size[0] as F, ctx.size[1] as F), hit.uv_world);
@@ -34,9 +35,20 @@ impl Renderer for Textured<'_> {
                                 _ => {},
                             }
                         } else {
+                            match &ctx.nodes[hit.node].object {
+                                Object::Element2D(el) => {
+
+                                    let p = hit.uv;
+
+                                    let mut uv = UV::new(p, GF4::new(0.0, 0.0, ctx.size[0] as F, ctx.size[1] as F), hit.uv_world);
+                                    c = el.get_color_at(&mut uv, hit.node, ctx);
+                                },
+                                _ => {},
+                            }
+                        }/* else {
                             c[0] = hit.uv.x + 0.5;
                             c[1] = hit.uv.y + 0.5;
-                        }
+                        }*/
                     }
                 }
                 _ => {},

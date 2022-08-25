@@ -4,6 +4,7 @@ pub struct Texture<'a> {
     color               : Option<ColorBuffer<F>>,
 
     engine              : ScriptEngine<'a>,
+    pub pixelate        : Option<F>
 }
 
 impl Element2D for Texture<'_> {
@@ -15,7 +16,12 @@ impl Element2D for Texture<'_> {
             color           : None,
 
             engine,
+            pixelate        : None,
         }
+    }
+
+    fn name(&self) -> String {
+        "Texture".to_string()
     }
 
     fn render(&mut self, node_index: usize, ctx: &Context) {
@@ -53,7 +59,7 @@ impl Element2D for Texture<'_> {
 
             let index = xi * 4 + yi * color.size[0] * 4;
 
-            return GF4::new(color.pixels[index], color.pixels[index+1], color.pixels[index+2], 1.0);
+            return GF4::new(color.pixels[index], color.pixels[index+1], color.pixels[index+2],color.pixels[index+3]);
         } else {
             let mut c = GF4::new(0.0, 0.0, 0.0, 1.0);
             self.compute_color_at(uv, &mut c, node_index, ctx);
@@ -63,21 +69,30 @@ impl Element2D for Texture<'_> {
 
     fn compute_color_at(&self, uv: &UV, color: &mut GF4, node_index: usize, ctx: &Context) {
 
-        for child_index in &ctx.nodes[node_index].childs {
-            match &ctx.nodes[*child_index].object {
-                Object::Element2D(el) => el.compute_color_at(uv, color, *child_index, ctx),
-                _ => {},
+        let mut compute = |uv: &UV| {
+            for child_index in &ctx.nodes[node_index].childs {
+                match &ctx.nodes[*child_index].object {
+                    Object::Element2D(el) => el.compute_color_at(&uv, color, *child_index, ctx),
+                    _ => {},
+                }
             }
-        }
 
-        for child_index in &ctx.nodes[node_index].elements {
-            match &ctx.nodes[*child_index].object {
-                Object::Element2D(el) => el.compute_color_at(uv, color, *child_index, ctx),
-                _ => {},
+            for el_index in &ctx.nodes[node_index].elements {
+                match &ctx.nodes[*el_index].object {
+                    Object::Element2D(el) => el.compute_color_at(uv, color, *el_index, ctx),
+                    _ => {},
+                }
             }
-        }
+        };
 
-        self.engine.execute_shader(uv, color);
+        if let Some(pixelate) = self.pixelate {
+            let local_uv = uv.pixelate(pixelate);
+            compute(&local_uv);
+            self.engine.execute_shader(&local_uv, color);
+        } else {
+            compute(uv);
+            self.engine.execute_shader(uv, color);
+        }
     }
 
     fn get_size(&self) -> [usize; 2]
@@ -100,7 +115,39 @@ impl Script for Texture<'_> {
     }
 
     fn apply_properties(&mut self, props: Vec<Property>) -> Result<(), RPUError> {
-        self.engine.apply_properties(props)
+        let rc = self.engine.apply_properties(props);
+        self.pixelate = self.engine.get_float("pixelate");
+        if let Some(string_data) = self.engine.get_string("data") {
+            if let Some(png_data) = base64::decode(string_data).ok() {
+                let data = std::io::Cursor::new(png_data);
+
+                let decoder = png::Decoder::new(data);
+                if let Ok(mut reader) = decoder.read_info() {
+                    let mut buf = vec![0; reader.output_buffer_size()];
+                    let info = reader.next_frame(&mut buf).unwrap();
+                    let bytes = &buf[..info.buffer_size()];
+
+                    let width = info.width as usize;
+                    let height = info.height as usize;
+
+                    let mut color = ColorBuffer::new(width, height, 1.0);
+
+                    for y in 0..height {
+                        for x in 0..width {
+                            let s = x * 4 + y * width * 4;
+                            let d = x * 4 + (height-y-1) * width * 4;
+                            color.pixels[s] = bytes[d] as F / 255.0;
+                            color.pixels[s+1] = bytes[d+1] as F / 255.0;
+                            color.pixels[s+2] = bytes[d+2] as F / 255.0;
+                            color.pixels[s+3] = bytes[d+3] as F / 255.0;
+                        }
+                    }
+
+                    self.color = Some(color);
+                }
+            }
+        }
+        rc
     }
 
     fn execute(&mut self, code: String) {

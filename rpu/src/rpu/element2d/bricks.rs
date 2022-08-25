@@ -12,8 +12,12 @@ impl Element2D for Bricks<'_> {
 
         Self {
             engine,
-            color           : Vector4::new(0.0, 0.0, 0.0, 1.0),
+            color           : Vector4::new(1.0, 1.0, 1.0, 1.0),
         }
+    }
+
+    fn name(&self) -> String {
+        "Bricks".to_string()
     }
 
     fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, _ctx: &Context) {
@@ -54,7 +58,9 @@ impl Element2D for Bricks<'_> {
         //    isMissing = true
         //}
 
-        *color = GF4::new(m, m, m, 1.0);
+        *color = glm::mix(&color, &self.color, (self.color.w * m).clamp(0.0, 1.0));
+
+        //*color = GF4::new(m, m, m, 1.0);
         self.engine.execute_shader(uv, color);
     }
 }

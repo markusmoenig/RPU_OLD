@@ -15,6 +15,10 @@ impl Element2D for Vertical<'_> {
         }
     }
 
+    fn name(&self) -> String {
+        "Vertical".to_string()
+    }
+
     fn compute_color_at(&self, uv: &UV, color: &mut GF4, node_index: usize, ctx: &Context) {
         let v_el_size = 1.0 / ctx.nodes[node_index].elements.len() as F;
         let mut y = 0.0;

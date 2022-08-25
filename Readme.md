@@ -38,11 +38,11 @@ Pinhole
     center = F3(3.0, 0.4, 0.0)
 
 Texture
-    name = "Disc"
+    name = "Bricks"
     Bricks
 
 Voxel'a
-    texture = "Disc"
+    texture = "Bricks"
     rotation = F3(0.0, 0.0, 0.0)
 
 Grid3D

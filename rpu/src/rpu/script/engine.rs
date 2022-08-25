@@ -55,13 +55,12 @@ impl ScriptEngine<'_> {
             match p {
                 Property::Property(key, value) => {
                     let cmd = format!("let {} = {};", key, value);
-                    println!("prop, {}", cmd);
+                    //println!("prop, {}", cmd);
                     self.execute(cmd);
                 },
                 Property::Function(name, args, body) => {
                     let code = format!("fn {}({}) {{ {} }};", name, args, body);
-                    // let code = format!("{}", body);
-                    println!("fn, {}", code);
+                    //println!("fn, {}", code);
                     if name == "shader" {
                         let rc = self.engine.compile(code);
 

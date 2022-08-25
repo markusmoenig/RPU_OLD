@@ -128,6 +128,55 @@ impl Layout3D for Grid3D<'_> {
                     }
                     _ => {},
                 }
+            } else {
+                // Empty, lets see if there is a sprite here
+
+                for s in &ctx.sprites {
+
+                    if let Some(position) = s.get_position() {
+                        if position.x == map_pos.x as f64 && position.y == map_pos.y as f64 && position.z == map_pos.z as f64{
+
+                            if let Some(texture) = s.get_texture() {
+                                //float d = length(vec3(mask) * (sideDist - deltaDist)); // rayDir normalized
+                                let dx = mask.x * (side_dist.x - delta_dist.x);
+                                let dy = mask.y * (side_dist.y - delta_dist.y);
+                                let dz = mask.z * (side_dist.z - delta_dist.z);
+                                let dist = glm::length(&GF3::new(dx, dy, dz));
+
+                                let hp = ro + rd * dist;
+
+                                let uv = get_uv(&hp, &mask);
+
+                                let mut hit = false;
+                                match &ctx.nodes[texture].object {
+                                    Object::Element2D(el) => {
+
+                                        let p = uv.0;
+
+                                        let mut uv = UV::new(p, GF4::new(0.0, 0.0, ctx.size[0] as F, ctx.size[1] as F), uv.1);
+                                        let c = el.get_color_at(&mut uv, texture, ctx);
+                                        if c.w > 0.0 {
+                                            hit = true;
+                                        }
+                                    },
+                                    _ => {},
+                                }
+
+                                if hit {
+                                return Some( HitRecord {
+                                    distance        : dist,
+                                    node            : texture,
+                                    hit_point       : hp,
+                                    mask            : mask,
+                                    normal          : Vector3::new(0.0, 0.0, 0.0),
+                                    uv              : uv.0,
+                                    uv_world        : uv.1,
+                                });
+                            }
+                            }
+                        }
+                    }
+                }
             }
 
 			if side_dist.x < side_dist.y {

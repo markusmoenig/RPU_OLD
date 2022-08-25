@@ -1,32 +1,70 @@
 // -- RPU v0.1
 
 Pinhole
-    origin = F3(3.0, 0.5, 8.5)
-    center = F3(3.0, 0.4, 0.0)
-    //<update: origin.y += 0.1/>
+    origin = F3(3.001, 1.5001, 11.5)
+    center = F3(3.0, 1.5, 0.0)
 
 Texture
-    name = "Disc"
-    //size = F2(100.0, 100.0)
-    //Vertical
+    name = "Monster"
+    data = "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAUGVYSWZNTQAqAAAACAACARIAAwAAAAEAAQAAh2kABAAAAAEAAAAmAAAAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAAAYoAMABAAAAAEAAAAYAAAAAPDoW7MAAAFZaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA2LjAuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOnRpZmY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vdGlmZi8xLjAvIj4KICAgICAgICAgPHRpZmY6T3JpZW50YXRpb24+MTwvdGlmZjpPcmllbnRhdGlvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+Chle4QcAAAF2SURBVEgN3VRBboMwEFyq/gepB/IeDlTlBX0KUTnkPfEhUl7kegxrxtY6cEgusRRYdmdnvGMrIm+1hk48fhhqGjqP396AjON+7fvUQIn1+zL30nZjFEJunF2jNbxV/HZ3cndTyLhUBtfsJOKTQKqugZOxETf50J+EVATkG3EfqAO2sj44j52oMvL9cIll5EGodmzkGwZA9C7TxLb4yCaAJa2I/2q7hIAI7LKWboDtCmZm0DQB71wR2CkWhH83i2OMHJZi4sf6YK7Mu04mr42YwmpmIo0ZC4v4TNIEAHOByUtfgeUcY5kDuGwCJLAwyRIt9iD+u3o5NeeYvvof+T4trSxUkgNsCkSW9cG2cR5xaUdZx/euAECWyBFy9GbXFInaYitqGCu/OwGfh0Vg+c64hwL8/1ROoNcZZHzvmRxxdk3LIn8zIceMseLDAnqosKScxiLW3GEBbXjqGweMc7AO+lHt0CZAzIdca9rDvdyilwvUJn9a/h+9kLeXa8PDYAAAAABJRU5ErkJggg=="
+
+Texture
+    name = "Bricks"
+    pixelate = 50.0;
+    Color
+        color = F4(0.1, 0.1, 0.1, 1.0)
     Bricks
-        test = true
+        color = F4(0.2, 0.2, 0.2, 1.0)
+    Noise
+        color = F4(0.7, 0.8, 0.5, 0.2)
+        scale =  F2(0.2, 1.2)
+
+Texture
+    name = "Noise"
+    pixelate = 80.0;
+    Noise
+        color = F4(0.1, 0.1, 0.1, 1.0)
 
 Voxel'a
-    texture = "Disc"
+    texture = "Bricks"
     rotation = F3(0.0, 0.0, 0.0
-    //position = F3(0.0, 0.0, 0.0)
-    //update = rotation.y += 1.0
 
 Voxel'b
-    texture = "Disc"
+    texture = "Noise"
     radius = 0.5
 
+Sprite
+    texture = "Monster"
+    position = F3(2.0, 1.0, 6.0)
+
 Grid3D
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+::
 :    a
-:aab a
+:aaa a
 :
 : a  a
 : a  a
 : a  a
+::
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+:bbbbb
+
 

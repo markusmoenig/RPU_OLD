@@ -1,32 +1,44 @@
 use crate::prelude::*;
 
-pub struct ColorElement<'a> {
+pub struct Sprite<'a> {
+    pub position            : GF3,
+    pub texture             : Option<usize>,
+
     engine                  : ScriptEngine<'a>,
-    color                   : GF4,
 }
 
-impl Element2D for ColorElement<'_> {
-    fn new() -> Self {
+impl Element2D for Sprite<'_> {
+    fn new () -> Self {
 
         let engine = ScriptEngine::new();
 
         Self {
-            engine,
-            color           : Vector4::new(0.0, 0.0, 0.0, 1.0),
+            position        : GF3::new(0.0, 0.0, 0.0),
+            texture         : None,
+            engine
         }
     }
 
     fn name(&self) -> String {
-        "Color".to_string()
+        "Noise".to_string()
+    }
+
+    fn get_position(&self) -> Option<GF3> {
+        Some(self.position)
+     }
+
+    fn get_texture(&self) -> Option<usize> {
+        self.texture
     }
 
     fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, _ctx: &Context) {
-        *color = self.color;
+
+
         self.engine.execute_shader(uv, color);
     }
 }
 
-impl Script for ColorElement<'_> {
+impl Script for Sprite<'_> {
 
     fn get_scope<'a>(&mut self) -> &'a Scope {
         self.engine.get_scope()
@@ -38,8 +50,8 @@ impl Script for ColorElement<'_> {
 
     fn apply_properties(&mut self, props: Vec<Property>) -> Result<(), RPUError> {
         let rc = self.engine.apply_properties(props);
-        if let Some(color) = self.engine.get_vector4("color") {
-            self.color = color;
+        if let Some(position) = self.engine.get_vector3("position") {
+            self.position = position;
         }
         rc
     }
