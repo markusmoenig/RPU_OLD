@@ -18,6 +18,8 @@ pub struct Context {
     pub camera                  : Box<dyn Camera3D>,
 
     pub size                    : [usize; 2],
+
+    pub out_texture             : Option<usize>,
 }
 
 impl Context {
@@ -37,6 +39,8 @@ impl Context {
             camera              : Box::new(Pinhole::new()),
 
             size                : [0, 0],
+
+            out_texture         : None,
         }
     }
 
@@ -94,12 +98,20 @@ impl Context {
 
                     let ray = self.camera.gen_ray(coord);
                     let mut hit = false;
+
+                    if let Some(texture) = self.out_texture {
+                        let index = self.textures[texture];
+                        if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[index].object, index) {
+                            pixel.copy_from_slice(&c);
+                        }
+                        hit = true;
+                    } else
                     if let Some(layout) = self.layouts.last() {
-                        if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &layout) {
+                        if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &layout, 0) {
                             pixel.copy_from_slice(&c);
                             hit = true;
                         }
-                    } else {
+                    } /*else {
                         for i in 0..self.textures.len() {
                             if let Some(c) = self.get_color(&ray,&[x as usize, y as usize], &color.size, &self.nodes[i].object) {
                                 pixel.copy_from_slice(&c);
@@ -107,7 +119,8 @@ impl Context {
                                 break;
                             }
                         }
-                    }
+                    }*/
+
                     if hit == false {
                         let c = [0.0, 0.0, 0.0, 1.0];
                         pixel.copy_from_slice(&c);
@@ -140,7 +153,7 @@ impl Context {
     }*/
 
     #[inline(always)]
-    fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], size: &[usize;2], object: &Object) -> Option<Color> {
+    fn get_color(&self, ray: &[Vector3<F>; 2], p: &[usize; 2], size: &[usize;2], object: &Object, index: usize) -> Option<Color> {
         let mut c = [0.0, 0.0, 0.0, 1.0];
 
         match object {
@@ -204,10 +217,10 @@ impl Context {
                 let [x, y]= p;
 
                 let xx = (*x as F / *width as F) - 0.5;
-                let yy = (*y as F / *height as F) - 0.5;
+                let yy = 0.5 - ((*y as F / *height as F));
 
-                let mut uv = UV::new(GF2::new(xx, -yy), GF4::new(0.0, 0.0, *width as F, *height as F), GF2::new(xx, -yy));
-                let v = element.get_color_at(&mut uv, 0, &self);
+                let mut uv = UV::new(GF2::new(xx, yy), GF4::new(0.0, 0.0, *width as F, *height as F), GF2::new(xx, yy));
+                let v = element.get_color_at(&mut uv, index, &self);
                 c[0] = v[0];
                 c[1] = v[1];
                 c[2] = v[2];

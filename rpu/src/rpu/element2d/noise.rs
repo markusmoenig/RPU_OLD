@@ -22,11 +22,16 @@ impl Element2D for Noise<'_> {
         "Noise".to_string()
     }
 
-    fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, _ctx: &Context) {
+    fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, ctx: &Context) {
         use noise::{NoiseFn, Perlin};
 
+        let mut uv_local = uv.world + GF2::new(10000.0, 10000.0);
+        let rr = ctx.size[0] as F / ctx.size[1] as F;
+        uv_local.x *= rr;
+        uv_local.y *= rr;
+
         let value = Perlin::new();
-        let v = value.get([uv.world.x * 20.0 / self.scale.x, uv.world.y * 20.0 / self.scale.y]);
+        let v = value.get([uv_local.x * 20.0 / self.scale.x, uv_local.y * 20.0 / self.scale.y]);
 
         //println!("{}", v);
         *color = glm::mix(&color, &self.color, (self.color.w * (v / 2.0 + 0.5)).clamp(0.0, 1.0));

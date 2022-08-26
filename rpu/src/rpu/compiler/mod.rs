@@ -3,6 +3,8 @@ pub mod context;
 pub mod node;
 pub mod object;
 
+use colors_transform::Color;
+
 use crate::prelude::*;
 
 use self::scanner::TokenType;
@@ -389,9 +391,11 @@ impl Compiler {
         let mut object : Option<Object> = None;
 
         let mut is_layout = false;
+        let mut is_texture = false;
 
         if self.parser.current.lexeme == "Texture" {
             is_layout = true;
+            is_texture = true;
             object = Some(Object::Element2D(Box::new(Texture::new())));
         } else
         if self.parser.current.lexeme == "Vertical" {
@@ -422,6 +426,12 @@ impl Compiler {
         // }
 
         self.advance();
+
+        // * on a texture means we should output it
+        if is_texture && self.check(TokenType::Star) {
+            ctx.out_texture = Some(ctx.textures.len());
+            self.advance();
+        }
 
         let props = self.parse_object_properties(&mut node);
 
@@ -523,8 +533,22 @@ impl Compiler {
             self.consume(TokenType::Identifier, "Expected identifier.");
 
             if self.check(TokenType::Equal) {
-                let value = self.scanner.scanline(1);
+                let mut value = self.scanner.scanline(1);
                 println!("assignment to {:?}, line {}: {} = {}", node.id, self.parser.current.line, property, value);
+                if value.starts_with('#') {
+                    //println!("Color {}", value);
+                    let mut chars = value.chars();
+                    chars.next();
+                    let color = chars.as_str();
+
+                    use colors_transform::{Rgb};
+
+                    if let Some(rgb) = Rgb::from_hex_str(color).ok() {
+                        println!("{:?}", rgb);
+                        value = format!("F4({:.3}, {:.3}, {:.3}, 1.0)", rgb.get_red() as F / 255.0, rgb.get_green() as F / 255.0, rgb.get_blue() as F / 255.0 );
+                        println!("{}", value);
+                    }
+                }
                 props.push(Property::Property(property, value));
                 self.advance();
                 if self.indent() == 0 {

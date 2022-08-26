@@ -20,19 +20,24 @@ impl Element2D for Bricks<'_> {
         "Bricks".to_string()
     }
 
-    fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, _ctx: &Context) {
+    fn compute_color_at(&self, uv : &UV, color: &mut GF4, _node: usize, ctx: &Context) {
 
         let cell = 1.0;
-        let ratio = 3.0;
+        let ratio = 2.0;
         let brick = 1.0;
+        let gap_x = 0.08;
 
-        let mut u = uv.world * 8.0;
+        let mut uv_local = uv.world;
+        let rr = ctx.size[0] as F / ctx.size[1] as F;
+        uv_local.x *= rr;
+        uv_local.y *= rr;
+
+        let mut u = uv_local * 4.0 + GF2::new(10000.0, 10000.0);
 
         let bevelx = 0.07;
         let bevel = GF2::new(bevelx, bevelx);
-        let gap_x = 0.08;
         let gap = GF2::new(gap_x, gap_x);
-        let round = 0.2;
+        let round = 0.25;
         //let missing = 0.0;
 
         let w = GF2::new(ratio,1.0);
