@@ -159,5 +159,5 @@ Grid3D
 
 ![Sprite](images/sprite.png)
 
-Scary isn't he ? We loaded the texture for the sprite from a JSON encoded PNG file placed the sprite at the given location into the scene.
+Scary isn't he ? We loaded the texture for the sprite from a JSON encoded PNG file and placed the sprite at the given location into the scene.
 
