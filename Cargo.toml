@@ -4,11 +4,11 @@ members = [
     "rpu",
     "cli",
     "rpuc",
-    "creator"
+    "editor"
 ]
 
 default-members = [
-    "creator"
+    "editor"
 ]
 
 edition = "2021"

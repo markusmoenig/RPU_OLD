@@ -82,16 +82,8 @@ impl Compiler {
         }
     }
 
-    pub fn compile_from_path(&mut self, path_to_main : PathBuf) -> Result<Context, RPUError> {
-
-        let mut main_code = "".to_string();
-
+    pub fn compile(&mut self, main_code : String) -> Result<Context, RPUError> {
         let mut context = Context::new();
-
-        if let Some(main) = std::fs::read_to_string(path_to_main).ok() {
-            main_code = main;
-            // println!("{}", main_code);
-        }
 
         self.scanner = Scanner::new(main_code);
 

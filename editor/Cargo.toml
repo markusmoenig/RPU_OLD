@@ -1,0 +1,13 @@
+[package]
+name = "editor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env_logger = "0.9"
+log = "0.4"
+pixels = "0.9.0"
+tao = "0.12.2"
+code_editor = { path = "../../code_editor/code_editor" }#"0.1.0"
+fontdue = "0.7.2"
+rpu = { path = "../../RPU/rpu" }#"0.1.0"

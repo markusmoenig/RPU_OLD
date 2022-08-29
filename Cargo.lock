@@ -289,8 +289,6 @@ dependencies = [
 [[package]]
 name = "code_editor"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bee929c52143daebd03d309f3a2dfa73908f40b2a88d087368e78219dc864b10"
 dependencies = [
  "copypasta",
  "fontdue",
@@ -440,17 +438,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "creator"
-version = "0.1.0"
-dependencies = [
- "code_editor",
- "env_logger",
- "log",
- "pixels",
- "tao",
-]
-
-[[package]]
 name = "crossbeam-channel"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -586,6 +573,19 @@ name = "downcast-rs"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
+
+[[package]]
+name = "editor"
+version = "0.1.0"
+dependencies = [
+ "code_editor",
+ "env_logger",
+ "fontdue",
+ "log",
+ "pixels",
+ "rpu",
+ "tao",
+]
 
 [[package]]
 name = "either"

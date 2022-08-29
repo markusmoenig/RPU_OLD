@@ -1,6 +1,19 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
+mod draw2d;
+mod ui;
+mod context;
+
+pub mod prelude {
+    pub use crate::draw2d::Draw2D;
+    pub use crate::context::{Context};
+    pub use code_editor::WidgetKey;
+}
+
+use crate::ui::UI;
+use crate::prelude::*;
+
 use log::error;
 use pixels::{Error, Pixels, SurfaceTexture};
 use tao::{
@@ -14,12 +27,10 @@ use tao::{
     keyboard::{Key},
 };
 
-use code_editor::prelude::*;
-
 fn main() -> Result<(), Error> {
 
-    let mut width     : usize = 600;
-    let mut height    : usize = 400;
+    let mut width     : usize = 800;
+    let mut height    : usize = 600;
 
     env_logger::init();
     let event_loop = EventLoop::new();
@@ -48,11 +59,7 @@ fn main() -> Result<(), Error> {
 
     // Init the code editor
 
-    let mut code_editor = CodeEditor::new();
-    code_editor.set_font("resources/Source_Code_Pro/static/SourceCodePro-Regular.ttf");
-    code_editor.set_mode(CodeEditorMode::Rhai);
-    code_editor.set_font_size(17.0);
-    code_editor.set_text("testing".to_string());
+    let mut ui = UI::new();
 
     let mut coords = PhysicalPosition::new(0.0, 0.0);
     let mut is_pressed = false;
@@ -101,32 +108,32 @@ fn main() -> Result<(), Error> {
                     match key {
                         //Key::Escape => *control_flow = ControlFlow::Exit,
                         Key::Enter => {
-                            if code_editor.key_down(None, Some(WidgetKey::Return)) {
+                            if ui.key_down(None, Some(WidgetKey::Return)) {
                                 window.request_redraw();
                             }
                         }
                         Key::ArrowLeft => {
-                            if code_editor.key_down(None, Some(WidgetKey::Left)) {
+                            if ui.key_down(None, Some(WidgetKey::Left)) {
                                 window.request_redraw();
                             }
                         }
                         Key::ArrowRight => {
-                            if code_editor.key_down(None, Some(WidgetKey::Right)) {
+                            if ui.key_down(None, Some(WidgetKey::Right)) {
                                 window.request_redraw();
                             }
                         }
                         Key::ArrowUp => {
-                            if code_editor.key_down(None, Some(WidgetKey::Up)) {
+                            if ui.key_down(None, Some(WidgetKey::Up)) {
                                 window.request_redraw();
                             }
                         }
                         Key::ArrowDown => {
-                            if code_editor.key_down(None, Some(WidgetKey::Down)) {
+                            if ui.key_down(None, Some(WidgetKey::Down)) {
                                 window.request_redraw();
                             }
                         }
                         Key::Backspace => {
-                            if code_editor.key_down(None, Some(WidgetKey::Delete)) {
+                            if ui.key_down(None, Some(WidgetKey::Delete)) {
                                 window.request_redraw();
                             }
                         }
@@ -138,12 +145,12 @@ fn main() -> Result<(), Error> {
                                 match char {
 
                                     '\n' => {
-                                        if chars.is_empty() == false && code_editor.key_down(None, Some(WidgetKey::Return)) {
+                                        if chars.is_empty() == false && ui.key_down(None, Some(WidgetKey::Return)) {
                                             window.request_redraw();
                                         }
                                     }
                                     _ => {
-                                        if chars.is_empty() == false && code_editor.key_down(Some(chars[0]), None) {
+                                        if chars.is_empty() == false && ui.key_down(Some(chars[0]), None) {
                                             window.request_redraw();
                                         }
                                     }
@@ -154,7 +161,7 @@ fn main() -> Result<(), Error> {
                     }
                 }
                 WindowEvent::ModifiersChanged(m) => {
-                    if code_editor.modifier_changed(m.shift_key(), m.control_key(), m.alt_key(), m.super_key()) {
+                    if ui.modifier_changed(m.shift_key(), m.control_key(), m.alt_key(), m.super_key()) {
                         window.request_redraw();
                     }
                 }
@@ -170,7 +177,7 @@ fn main() -> Result<(), Error> {
             Event::RedrawRequested(_) => {
 
                 let frame = pixels.get_frame();
-                code_editor.draw(frame, (0, 0, width, height), width);
+                ui.draw(frame, (0, 0, width, height), width);
 
                 if pixels
                     .render()
@@ -186,11 +193,11 @@ fn main() -> Result<(), Error> {
                     //println!("mouse moved: {:?}", delta),
                     if let Some(pixel_pos) = pixels.window_pos_to_pixel((coords.x as f32, coords.y as f32)).ok() {
                         if is_pressed {
-                            if code_editor.mouse_dragged(pixel_pos) {
+                            if ui.mouse_dragged(pixel_pos) {
                                 window.request_redraw();
                             }
                         } else
-                        if code_editor.mouse_hover(pixel_pos) {
+                        if ui.mouse_hover(pixel_pos) {
                             window.request_redraw();
                         }
                     }
@@ -200,7 +207,7 @@ fn main() -> Result<(), Error> {
                         //println!("mouse button {} pressed", button);
                         if let Some(pixel_pos) = pixels.window_pos_to_pixel((coords.x as f32, coords.y as f32)).ok() {
                             is_pressed = true;
-                            if code_editor.mouse_down(pixel_pos) {
+                            if ui.mouse_down(pixel_pos) {
                                 window.request_redraw();
                             }
                         }
@@ -209,14 +216,33 @@ fn main() -> Result<(), Error> {
                         //println!("mouse button {} released", button),
                         if let Some(pixel_pos) = pixels.window_pos_to_pixel((coords.x as f32, coords.y as f32)).ok() {
                             is_pressed = false;
-                            if code_editor.mouse_up(pixel_pos) {
+                            if ui.mouse_up(pixel_pos) {
                                 window.request_redraw();
                             }
                         }
                     }
                     _ => (),
                 },
-                _ => {}
+
+                DeviceEvent::MouseWheel { delta, .. } => match delta {
+                    // tao::event::MouseScrollDelta::LineDelta(x, y) => {
+                    //     println!("mouse wheel Line Delta: ({},{})", x, y);
+                    //     let pixels_per_line = 120.0;
+                    //     let mut pos = window.outer_position().unwrap();
+                    //     pos.x -= (x * pixels_per_line) as i32;
+                    //     pos.y -= (y * pixels_per_line) as i32;
+                    //     window.set_outer_position(pos)
+                    // }
+                    tao::event::MouseScrollDelta::PixelDelta(p) => {
+                        //println!("mouse wheel Pixel Delta: ({},{})", p.x, p.y);
+                        if ui.mouse_wheel((p.x as isize, p.y as isize)) {
+                            window.request_redraw();
+                            //mouse_wheel_ongoing = true;
+                        }
+                    }
+                    _ => (),
+                },
+                _ => (),
             }
             _ => {}
         }

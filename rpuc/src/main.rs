@@ -61,7 +61,7 @@ fn main() -> Result<(), Error> {
 
         let mut buffer = vec![0;width * height * 4];
         let start = get_time();
-        rpu.render(&mut buffer, (0, 0, width, height));
+        rpu.render(&mut buffer, (0, 0, width, height), width);
         println!("Image rendered in {} ms", get_time() - start);
         writer.write_image_data(&buffer).unwrap(); // Save
 
@@ -93,7 +93,7 @@ fn main() -> Result<(), Error> {
         // Draw the current frame
         if let Event::RedrawRequested(_) = event {
             // let start = get_time();
-            rpu.render(&mut pixels.get_frame()[..], (0, 0, width, height));
+            rpu.render(&mut pixels.get_frame()[..], (0, 0, width, height), width);
             // println!("Time: {}", get_time() - start);
             if pixels
                 .render()
